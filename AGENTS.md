@@ -1,6 +1,6 @@
 # Robin — agent instructions
 
-Autonomous insurance-claims agent for French small businesses. Product spec: `docs/prd/2026-10-22-robin-claims-agent/PRD.md` (authoritative). Architecture decisions: `CONTEXTE_PROJET_ASSURANCE.md` §14 (historical). Status tracker: `docs/prd/2026-10-22-robin-claims-agent/STATUS.md`.
+Autonomous insurance-claims agent for small businesses (first market: France). Product spec: `docs/prd/2026-10-22-robin-claims-agent/PRD.md` (authoritative). Architecture decisions: `CONTEXTE_PROJET_ASSURANCE.md` §14 (historical). Status tracker: `docs/prd/2026-10-22-robin-claims-agent/STATUS.md`.
 
 ## Start here
 
