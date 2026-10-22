@@ -4,12 +4,14 @@ from __future__ import annotations
 import asyncio
 import re
 import secrets
+import hashlib
 from pathlib import Path
 from urllib.parse import quote
 from uuid import UUID
 from fastapi import APIRouter, Request, HTTPException
 from fastapi.responses import RedirectResponse, FileResponse, Response, JSONResponse
 from fastapi.templating import Jinja2Templates
+from starlette.staticfiles import StaticFiles
 from psycopg.errors import UniqueViolation
 from psycopg.types.json import Jsonb
 from app import db
@@ -34,6 +36,12 @@ from app.agents.intake.graph import rows
 router = APIRouter(tags=["web"])
 ROOT = Path(__file__).parent
 templates = Jinja2Templates(directory=str(ROOT / "templates"))
+static_files = StaticFiles(directory=str(ROOT / "static"))
+ASSET_VERSIONS = {
+    name: hashlib.sha256((ROOT / "static" / name).read_bytes()).hexdigest()[:16]
+    for name in ("styles.css", "app.js")
+}
+templates.env.globals["asset_url"] = lambda name: f"/static/{name}?v={ASSET_VERSIONS[name]}"
 STEPS = ["business", "documents", "mandate", "done"]
 MANDATE_VERSION = "2026-10-22-v1"
 MANDATE_SCOPE = {
@@ -92,11 +100,13 @@ async def queue(conn, aid, kind, payload):
 
 
 @router.get("/static/{asset:path}")
-async def static(asset: str):
-    target = (ROOT / "static" / asset).resolve()
-    if not target.is_relative_to((ROOT / "static").resolve()) or not target.is_file():
-        raise HTTPException(404)
-    return FileResponse(target)
+async def static(asset: str, request: Request):
+    response = await static_files.get_response(asset, request.scope)
+    versioned = asset in ASSET_VERSIONS and request.query_params.get("v") == ASSET_VERSIONS[asset]
+    response.headers["Cache-Control"] = (
+        "public, max-age=31536000, immutable" if versioned else "public, max-age=3600"
+    )
+    return response
 
 
 @router.get("/")
