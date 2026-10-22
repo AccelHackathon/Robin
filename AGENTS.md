@@ -1,6 +1,16 @@
 # Robin — agent instructions
 
-Autonomous insurance-claims agent for French small businesses. Product spec: `docs/prd/2026-10-22-robin-claims-agent/PRD.md` (authoritative). Architecture decisions: `CONTEXTE_PROJET_ASSURANCE.md` §14 (French, historical). Status tracker: `docs/prd/2026-10-22-robin-claims-agent/STATUS.md`.
+Autonomous insurance-claims agent for French small businesses. Product spec: `docs/prd/2026-10-22-robin-claims-agent/PRD.md` (authoritative). Architecture decisions: `CONTEXTE_PROJET_ASSURANCE.md` §14 (historical). Status tracker: `docs/prd/2026-10-22-robin-claims-agent/STATUS.md`.
+
+## Start here
+
+The work is split into three parallel workstreams, each owned by one person and their agents. **Before writing any code, read `docs/workstreams/README.md`** (rules, interfaces, what is already done), then the spec of the stream you were assigned:
+
+- **A — Voice & insurer side** → `docs/workstreams/A-voice-and-insurer.md`
+- **B — Onboarding & Intake** → `docs/workstreams/B-onboarding-and-intake.md`
+- **C — Claims Agent & Telegram** → `docs/workstreams/C-claims-agent-and-telegram.md`
+
+Your spec lists the paths you own, the deliverables, the acceptance criteria and the order of work. Work only inside your owned paths; follow the git cadence in the README (small commits, `git pull --rebase` before every push); update the Status block at the top of your spec when you finish an item. If you were not told which stream you are on, stop and ask.
 
 ## Language
 
