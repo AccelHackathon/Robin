@@ -9,12 +9,14 @@ from __future__ import annotations
 
 import json
 import re
+from datetime import datetime, timezone
 from typing import Any
 
 from psycopg.rows import dict_row
 
 from app import db
 from app.agents.claims import tools_impl as T
+from app.contracts import LossItemInput
 from app.agents.review.amounts import extract_amounts_eur
 from app.agents.review.rules import has_release_language
 
@@ -51,6 +53,89 @@ async def _attach_document_to_claim(doc_id: str, claim_id: str) -> None:
         await conn.commit()
 
 
+async def _structure_narrative(state: dict[str, Any], text: str, out: dict[str, Any]) -> None:
+    """Model-backed: dates, nature, neutral description and items the client mentions (never amounts the agent invents)."""
+    try:
+        from app.agents.claims.nodes import llm
+    except ImportError:
+        return
+    claim_id, memory = state["claim_id"], state["memory"]
+    catalog_keys = [c["key"] for c in memory.get("catalog", [])]
+    try:
+        n = await llm.extract_narrative(text, claim_id=claim_id, today=datetime.now(timezone.utc).date().isoformat(), catalog_keys=catalog_keys)
+    except Exception:
+        return
+    if not n:
+        return
+    out["narrative"] = n
+    claim = memory["claim"]
+    updates, params = [], []
+    if n.get("loss_date") and not claim.get("loss_date"):
+        updates.append("loss_date = %s"); params.append(n["loss_date"])
+    if n.get("loss_type") and not claim.get("loss_type"):
+        updates.append("loss_type = %s"); params.append(n["loss_type"])
+    if n.get("neutral_description"):
+        updates.append("summary = %s"); params.append(n["neutral_description"][:500])
+    if updates:
+        async with db.pool.connection() as conn:
+            await conn.execute(f"UPDATE claims SET {', '.join(updates)}, updated_at = now() WHERE id = %s", (*params, claim_id))
+            if n.get("loss_date") and not claim.get("riot_event_id"):
+                await conn.execute(
+                    """UPDATE claims SET riot_event_id = r.id FROM riot_events r
+                       WHERE claims.id = %s AND r.started_at::date <= %s AND coalesce(r.ended_at, r.started_at + interval '2 days')::date >= %s""",
+                    (claim_id, n["loss_date"], n["loss_date"]),
+                )
+            await conn.commit()
+    if n.get("neutral_description"):
+        f = await T.log_fact(claim_id, f"Event (neutral restatement): {n['neutral_description']}", "agent_inference", "medium", status="to_confirm")
+        out["new_fact_ids"].append(f.fact_id)
+
+    items: list[LossItemInput] = []
+    existing = {(li.get("label") or "").lower() for li in memory["loss_items"]}
+    for it in n.get("items_mentioned") or []:
+        label = (it.get("label") or "").strip()
+        if not label or label.lower() in existing:
+            continue
+        total = it.get("total_value_eur")
+        if total is None and it.get("quantity") is not None and it.get("unit_value_eur") is not None:
+            total = round(float(it["quantity"]) * float(it["unit_value_eur"]), 2)
+        note, clause_id, page, quote = None, None, None, None
+        if it.get("value_basis") == "retail":
+            note = "Stated at retail price. Stock is indemnified at purchase price under the policy; to be recomputed from supplier invoices."
+            clause = await _find_clause(memory, "marchandises prix d'achat valeur")
+            if clause:
+                clause_id, page, quote = clause.id, clause.page, clause.body[:200]
+        elif it.get("value_basis") in ("estimate", "unknown") and total is not None:
+            note = "Client estimate; supporting invoices or inventory needed before it can be claimed."
+        if it.get("is_customer_property"):
+            note = ((note + " ") if note else "") + "Customer property held in the shop (goods in custody / bailee cover to verify)."
+        items.append(LossItemInput(
+            catalog_key=it.get("catalog_key") if it.get("catalog_key") in catalog_keys else None, label=label,
+            category="customer_property" if it.get("is_customer_property") else "contents",
+            amount_claimed_eur=total, amount_basis="client_instruction" if total is not None else None,
+            computation=(f"{it.get('quantity')} × {it.get('unit_value_eur')} € as stated by the client" if it.get("quantity") and it.get("unit_value_eur") else None),
+            computation_detail={"stated_by": "client", "value_basis": it.get("value_basis"), "quantity": it.get("quantity"), "unit_value_eur": it.get("unit_value_eur")},
+            evidence_ids=[], clause_id=clause_id, clause_page=page, clause_quote=quote, condition_note=note, status="unsupported",
+        ))
+    if items:
+        stored = await T.update_loss_statement(claim_id, items)
+        out["items_created"] = [str(r["id"]) for r in stored]
+    if n.get("closure_days"):
+        out["closure_days"] = n["closure_days"]
+
+
+async def _find_clause(memory: dict[str, Any], query: str):
+    for c in memory.get("contracts", []):
+        if c.get("doc_type") in ("general_conditions", "particular_conditions"):
+            try:
+                hits = await T.search_clauses(str(c["id"]), query, 1)
+            except Exception:
+                hits = []
+            if hits:
+                return hits[0]
+    return None
+
+
 async def run(state: dict[str, Any]) -> dict[str, Any]:
     claim_id, ev = state["claim_id"], state["event"]
     kind, p = ev.get("kind"), ev.get("payload", {}) or {}
@@ -64,7 +149,9 @@ async def run(state: dict[str, Any]) -> dict[str, Any]:
             amounts = extract_amounts_eur(text)
             if amounts:
                 out["client_amounts_mentioned"] = amounts
-        out["summary"] = f"client message logged as fact{' with amounts ' + str(out.get('client_amounts_mentioned')) if out.get('client_amounts_mentioned') else ''}"
+            await _structure_narrative(state, text, out)
+        out["summary"] = f"client message logged as fact{' with amounts ' + str(out.get('client_amounts_mentioned')) if out.get('client_amounts_mentioned') else ''}" \
+            + (f"; {len(out.get('items_created', []))} loss item(s) drafted from the narrative" if out.get("items_created") else "")
 
     elif kind == "document":
         doc = await _document(p["document_id"]) if p.get("document_id") else None
@@ -74,7 +161,7 @@ async def run(state: dict[str, Any]) -> dict[str, Any]:
             try:
                 from app.agents.claims.nodes.llm import read_document  # optional model-backed extraction
 
-                extract = await read_document(str(doc["id"]))
+                extract = await read_document(str(doc["id"]), claim_id=claim_id)
             except ImportError:
                 extract = None
             except Exception:  # model unavailable or failed: register the document without amounts
