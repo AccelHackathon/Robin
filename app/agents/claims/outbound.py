@@ -63,7 +63,7 @@ async def send_telegram(account_id: str, claim_id: str | None, text: str, docume
     try:
         from app.channels.telegram.send import send_telegram as _send  # C's adapter (bot token required at runtime)
 
-        return await _send(account_id=account_id, text=text, document_ids=list(document_ids))
+        return await _send(account_id=account_id, text=text, document_ids=list(document_ids), claim_id=claim_id)
     except ImportError:
         return await _record_pending(account_id, claim_id, "telegram", None, None, text, list(document_ids), "en", "telegram adapter unavailable")
     except Exception as exc:  # bot not configured, chat not linked, provider error
