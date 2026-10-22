@@ -9,6 +9,7 @@ from app.agents.claims import handlers as claims_handlers  # noqa: F401  (regist
 from app.agents.insurer_sim import handlers as insurer_sim_handlers  # noqa: F401
 from app.agents.intake import handlers as intake_handlers  # noqa: F401
 from app.channels.email import handlers as email_handlers  # noqa: F401
+from app.channels.email import mailboxes as email_mailboxes
 from app.channels.email import routes as email_routes
 from app.channels.telegram import handlers as telegram_handlers  # noqa: F401
 from app.channels.telegram import routes as telegram_routes
@@ -29,6 +30,7 @@ async def lifespan(app: FastAPI):
     if await db.open_pool():
         applied = await db.run_migrations()
         log.info("migrations applied: %s", applied or "none")
+        await email_mailboxes.bootstrap()  # workstream A: simulated insurer inbox (idempotent)
         if settings.worker_enabled:
             worker_task = asyncio.create_task(worker.run_forever(stop))
     log.info("robin up, commit=%s", settings.git_commit)

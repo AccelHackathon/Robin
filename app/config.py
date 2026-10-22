@@ -9,9 +9,24 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
 
     anthropic_api_key: str | None = None
+    openai_api_key: str | None = None
     telegram_bot_token: str | None = None
+
+    # Workstream A — email (AgentMail)
     agentmail_api_key: str | None = None
+    agentmail_webhook_secret: str | None = None          # whsec_... from the webhook endpoint
+    agentmail_domain: str = "agentmail.to"
+    simulated_insurer_email: str | None = None           # mailbox with role simulated_insurer
+
+    # Workstream A — voice (ElevenLabs Agents + Twilio)
     elevenlabs_api_key: str | None = None
+    elevenlabs_agent_id: str | None = None
+    elevenlabs_phone_number_id: str | None = None
+    elevenlabs_webhook_secret: str | None = None
+    twilio_account_sid: str | None = None
+    twilio_auth_token: str | None = None
+    twilio_phone_number: str | None = None
+    insurer_test_phone: str | None = None                # verified number of the teammate playing the insurer
 
     public_base_url: str | None = None
     worker_enabled: bool = True

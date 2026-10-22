@@ -1,0 +1,17 @@
+Objet : Dossier {{ insurer_reference or policy_number }} – {{ business_name }} – demande de communication de pièces
+
+Madame, Monsieur,
+
+Dans le cadre du sinistre déclaré le {{ declaration_date }} pour le compte de {{ business_name }} (contrat n° {{ policy_number }}{% if insurer_reference %}, votre référence {{ insurer_reference }}{% endif %}), nous vous remercions de bien vouloir nous communiquer :
+
+{% for item in requested_items %}- {{ item }}
+{% endfor %}
+{% if reason %}
+Motif : {{ reason }}
+{% endif %}
+Nous vous remercions de nous indiquer le délai sous lequel ces pièces pourront nous être transmises.
+
+Nous vous prions d'agréer, Madame, Monsieur, l'expression de nos salutations distinguées.
+
+Robin, mandataire de {{ business_name }}
+{{ agent_email }}

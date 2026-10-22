@@ -1,0 +1,14 @@
+Objet : Dossier {{ insurer_reference or policy_number }} – {{ business_name }} – confirmation écrite de notre échange téléphonique du {{ call_date }}
+
+Madame, Monsieur,
+
+Suite à notre échange téléphonique du {{ call_date }}, nous vous remercions de bien vouloir confirmer par écrit les éléments suivants, tels que nous les avons compris :
+
+{% for item in points %}- {{ item }}
+{% endfor %}
+Ces éléments ne seront pris en compte dans le dossier qu'après votre confirmation écrite.
+
+Nous vous prions d'agréer, Madame, Monsieur, l'expression de nos salutations distinguées.
+
+Robin, mandataire de {{ business_name }}
+{{ agent_email }}

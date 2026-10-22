@@ -16,6 +16,9 @@ dependencies = [
     "langchain-anthropic>=0.3",
     "langchain-core>=0.3",
     "python-telegram-bot>=21.0",
+    "agentmail>=2.0",
+    "svix>=1.0",
+    "fpdf2>=2.7",
 ]
 
 [build-system]

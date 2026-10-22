@@ -1,0 +1,23 @@
+Objet : Déclaration de sinistre – {{ business_name }} – contrat n° {{ policy_number }}
+
+Madame, Monsieur,
+
+Agissant en qualité de mandataire de {{ business_name }} ({{ business_address }}), titulaire du contrat n° {{ policy_number }}, nous vous déclarons par la présente le sinistre suivant :
+
+- Date et heure : {{ loss_date }}{% if loss_time %} vers {{ loss_time }}{% endif %}
+- Lieu : {{ loss_place }}
+- Nature des faits : {{ loss_nature }}
+{% if police_report_ref %}- Dépôt de plainte : {{ police_report_ref }}
+{% endif %}
+Les mesures conservatoires nécessaires à la préservation des biens{% if conservatory_measures %} ({{ conservatory_measures }}){% endif %} ont été ou vont être prises. Aucune réparation définitive ne sera engagée sans votre accord écrit, hors mesures d'urgence.
+
+Un état des pertes détaillé, accompagné des justificatifs, vous sera transmis dans les meilleurs délais et complété au fur et à mesure, sous réserve de tous compléments.
+
+Nous vous remercions de bien vouloir nous accuser réception de la présente déclaration, nous communiquer la référence de votre dossier ainsi que la liste des pièces attendues et, le cas échéant, les coordonnées de l'expert désigné.
+
+Le mandat signé par l'assuré est joint à ce message.
+
+Nous vous prions d'agréer, Madame, Monsieur, l'expression de nos salutations distinguées.
+
+Robin, mandataire de {{ business_name }}
+{{ agent_email }}

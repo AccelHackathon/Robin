@@ -10,14 +10,18 @@ from app.config import settings
 
 log = logging.getLogger(__name__)
 
-HANDLERS: dict[str, Any] = {}
+HANDLERS: dict[tuple[str, str], list[Any]] = {}
 
 
 def handles(source: str, kind: str):
-    """Register an async handler(event: dict) for a (source, kind) pair."""
+    """Register an async handler(event: dict) for a (source, kind) pair.
+
+    Several handlers may share a pair (e.g. onboarding_done runs Intake and creates the mailbox);
+    they run sequentially in registration order and each may inspect the payload to opt out.
+    """
 
     def deco(fn):
-        HANDLERS[(source, kind)] = fn
+        HANDLERS.setdefault((source, kind), []).append(fn)
         return fn
 
     return deco
@@ -83,16 +87,18 @@ async def run_forever(stop: asyncio.Event) -> None:
             if not event:
                 await asyncio.sleep(settings.worker_poll_seconds)
                 continue
-            handler = HANDLERS.get((event["source"], event["kind"]))
-            if not handler:
+            handlers = HANDLERS.get((event["source"], event["kind"]), [])
+            if not handlers:
                 await _finish(event["id"], False, f"no handler for {event['source']}/{event['kind']}")
                 continue
-            try:
-                await handler(event)
-                await _finish(event["id"], True)
-            except Exception as exc:
-                log.exception("event %s failed", event["id"])
-                await _finish(event["id"], False, repr(exc))
+            errors = []
+            for handler in handlers:
+                try:
+                    await handler(event)
+                except Exception as exc:
+                    log.exception("event %s handler %s failed", event["id"], handler.__qualname__)
+                    errors.append(f"{handler.__qualname__}: {exc!r}")
+            await _finish(event["id"], not errors, "; ".join(errors) or None)
         except asyncio.CancelledError:
             break
         except Exception:
