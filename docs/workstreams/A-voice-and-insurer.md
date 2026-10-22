@@ -11,10 +11,13 @@
 - [x] AgentMail: mailbox per account (on `onboarding_done`), `send_email` adapter, inbound webhook (Svix-verified) → documents + `email_received`, French templates
 - [x] Insurer Simulator Agent — **tested end to end on production**: declaration → ack with reference + document requests; offer step attaches the "solde de tout compte" release PDF
 - [x] Simulated insurer inbox `sinistres-demo-assureur@agentmail.to`; AgentMail webhook registered
-- [ ] Live post-call webhook test end to end (agent now has the webhook; retest with a real call)
-- [ ] Verify answering-machine / no-answer path sets `failed` + `call_ended`
+- [x] Live post-call webhook **tested twice on production** (commit `1275f7c` deployed): HMAC verified, `reached_human`, structured answers with rationale when the insurer does not answer, `call_ended` emitted and consumed by C's handler (0 failed events)
+- [x] Reconciliation watcher for calls without webhook (Twilio check at 90 s / 240 s, 8-minute timeout, startup sweep) — code deployed, real no-answer run not yet exercised (both test calls were answered)
+- [x] French language preset + `language_detection` tool on the agent
+- [x] `POST /internal/calls` (bearer `INTERNAL_API_TOKEN`) to start a call on a claim during rehearsals; demo claim `800cdd2d-7130-4722-a804-d6afdf1817d4` (account `demo-karim@robin.local`) exists in production
+- [ ] Optional: one real "let it ring" call to watch the `voicemail_or_no_answer` path
 
-Key resources: agent mailbox is created per account; the only secret still missing globally is `ANTHROPIC_API_KEY` (not needed by stream A). `OPENAI_API_KEY` powers the voice agent LLM and is set.
+Integration notes for the merge: `call_ended` payload = `{call_id, transcript, structured_result{reached_human, answers[{question_index, answered, answer_summary, answer_verbatim, rationale, confidence}], insurer_reference, documents_requested, summary}, status, finalized_by}`; `email_received` payload carries `mailbox_role` (`agent` → C, `simulated_insurer` → A). Secrets on Runtime: all of stream A's are set; still missing globally: `ANTHROPIC_API_KEY`, `TELEGRAM_BOT_TOKEN`.
 
 ## Owned paths
 
