@@ -20,6 +20,12 @@ Promesse de travail proposée : **“Your policy, your evidence, your claim — 
 
 Le contexte initial évoque notamment les commerces dégradés ou vandalisés en marge de manifestations. Cela constitue un exemple d’usage, pas une limitation définitive du produit.
 
+**Hook du pitch (actualité, « why now ») :**
+- Les **17 et 18 octobre 2026**, environ **3 000 commerces** ont été dégradés ou pillés en France. Ce chiffre est provisoire ; il est cité par le Premier ministre et par Serge Papin ([Public Sénat, 19/10](https://www.publicsenat.fr/actualites/economie/pillages-au-moins-3-000-commerces-touchees-pour-des-centaines-de-millions-deuros-de-degats)), et confirmé par Bercy ([communiqué du 20/10](https://presse.economie.gouv.fr/le-gouvernement-met-en-place-des-mesures-de-soutien-aux-commerces-touches-par-les-degradations-du-samedi-17-et-dimanche-18-octobre-2026/)).
+- Les dommages assurés sont estimés entre **1 et 1,2 Md€** ([Morningstar DBRS via Reinsurance News](https://www.reinsurancene.ws/france-riots-put-srcc-accumulation-risk-in-focus-for-re-insurers-morningstar-dbrs/)).
+- Comme précédent, les émeutes de 2023 ont donné lieu à 16 400 sinistres pour 793 M€ ([Sénat](https://www.senat.fr/rap/r23-521/r23-52117.html)).
+- Le marché ne s’arrête pas aux émeutes : environ 110 sinistres pour 1 000 contrats de commerçants par an ([France Assureurs 2024](https://www.franceassureurs.fr/wp-content/uploads/lassurance-de-dommages-aux-biens-des-professionnels-en-2024-1.pdf)).
+
 ## 2. Décisions exprimées par Mathis
 
 ### Utilisateurs et périmètre
@@ -67,6 +73,7 @@ Le schéma joint montre également un retour des outils vers la mémoire issue d
 - Les appels doivent clarifier les questions utiles au dossier : pièces attendues, procédure, point contractuel ou blocage.
 - Les réponses obtenues doivent alimenter la mémoire du sinistre et modifier les prochaines actions lorsque nécessaire.
 - Aucun appel réel à un assureur n’a été effectué ou testé.
+- **Langue des appels : anglais**, comme le reste du bot. L’appel de démo se fait en anglais, ce qui permet au jury de le comprendre.
 
 ### Rémunération — provisoire
 
@@ -149,7 +156,7 @@ Le flux recommandé est : **événement entrant → lecture de la mémoire → a
 ### Outils demandés
 
 - **Messages WhatsApp :** recevoir et envoyer, récupérer les médias, identifier la conversation, conserver les accusés et échecs.
-- **Emails :** préparer et envoyer une déclaration, une demande de document, des justificatifs ou une relance ; recevoir les réponses et les rattacher au bon dossier. Le fournisseur et le domaine expéditeur restent à choisir. Ne pas supposer un accès à la boîte personnelle du commerçant.
+- **Emails :** préparer et envoyer une déclaration, une demande de document, des justificatifs ou une relance ; recevoir les réponses et les rattacher au bon dossier. **Fournisseur retenu : AgentMail** (voir §13). Ne pas supposer un accès à la boîte personnelle du commerçant.
 - **Téléphone :** appeler via ElevenLabs et une téléphonie compatible, naviguer dans un standard si possible, demander des précisions et récupérer un résultat structuré. Une transcription n’est pas une preuve que le dossier a été ouvert.
 - **Mémoire client :** lire et mettre à jour les faits, contrats, pièces, échanges, actions, offres et règlements dans la durée.
 
@@ -185,6 +192,7 @@ Les demandes, offres et fonds reçus sont des objets distincts. Une action n’e
 ## 5. Accès et documents disponibles
 
 - Aucun dossier réel complet de sinistre commercial n’a été fourni.
+- **Un corpus de 12 conditions générales publiques réelles est disponible dans `data/contrats/txt/`** (détail et usage au §13.2) : Generali, AXA ×2, Allianz, Sogessur, Groupama, MAAF, MMA, Hiscox ×3, Pacifica. S’y ajoutent les fiches clauses par contrat (avec pages) et 3 cas chiffrés sourcés dans `data/research/`.
 - Mathis peut essayer d’en obtenir un ; il a également demandé de rechercher les documents publics disponibles sur Internet.
 - Un accès à une assurance personnelle/familiale a été évoqué. Le nom entendu « MAF » ou « MAAF » reste à confirmer.
 - Un compte d’assurance de son entreprise existe peut-être sous l’accès du président. Aucun accès, contrat ou accord de test n’est confirmé.
@@ -275,6 +283,16 @@ Une réponse orale d’un interlocuteur ne doit pas être traitée automatiqueme
 Préparer plusieurs variantes contrôlées d’un dossier : cas complet, pièce manquante, ancienne version, doublon et contradiction. Définir avant le test les contrôles attendus et leurs sources.
 
 Comparer à un appel simple au **même modèle avec les mêmes documents disponibles**. Mesurer les contrôles correctement résolus, l’ancrage des montants dans les preuves et le temps de mise à jour. Aucun résultat n’a encore été mesuré ; ne pas inventer de gains de remboursement ou d’heures économisées.
+
+**Métriques ajoutées au benchmark :**
+
+- **Rappel des postes réclamables.** Pour chaque couple cas × contrat, la vérité terrain liste les postes réclamables avec leur clause et leur page (source : `data/research/08a_*`, `08b_*`). On mesure combien sont trouvés.
+- **Citations correctes.** On mesure le pourcentage de postes dont la page citée existe et dit bien ce qui est affirmé.
+- **€ identifiés.** On compare trois montants : la déclaration naïve du commerçant, le LLM sans recherche dans le contrat, et notre agent. Les cas viennent de `data/research/08c_*`.
+- **Temps de constitution du dossier.** Le chrono va des photos et factures reçues sur WhatsApp au dossier complet : texte extrait des images par OCR, pièces rattachées, postes chiffrés et cités. On le compare au temps d’une constitution manuelle : retrouver chaque facture, recopier les montants, chercher chaque clause dans 70 à 120 pages. Le temps manuel doit être mesuré sur un cas réel chronométré, pas estimé.
+- **Coût par dossier** (tokens/API) et **latence**.
+
+Les contrôles déjà prévus (doublons, avenant, contradictions, reprise de session) restent dans le benchmark.
 
 ## 8. Architecture minimale recommandée
 
@@ -453,3 +471,45 @@ Deux cas de test entièrement fictifs sont décrits : complément de preuves apr
 - Distinguer décisions de Mathis, suggestions de l’assistant et choses réellement testées.
 - Mathis a invoqué le skill **grill-me** : si l’entretien de conception reprend, poser une seule question à la fois, avec une recommandation ; examiner ce qui peut l’être directement plutôt que demander des faits déjà accessibles.
 - Les demandes de recherche, de synthèse ou de fichier doivent être traitées avant de reprendre l’interview.
+
+## 13. Décisions de build (22 octobre 2026, matin)
+
+### 13.1. Stack retenue
+
+| Brique | Choix | Pourquoi / notes |
+|---|---|---|
+| **WhatsApp** | **Compte WhatsApp Business** créé par l'équipe, branché via l'**API WhatsApp Cloud (Meta)** | C'est le canal principal du commerçant : texte, photos, documents, vocaux. Les médias arrivent par webhook et sont téléchargés côté backend. |
+| **Email** | **AgentMail** : une boîte par client ou dossier, envoi et réception par API, webhook à chaque email reçu | Offre gratuite : 3 boîtes, 100 emails/jour, adresses en `@agentmail.to`. L'envoi passe par HTTPS, ce qui contourne le blocage des ports 25/465 sur Runtime (§9.5). Aucun accès à la boîte du commerçant. |
+| **Appels** | **ElevenLabs Agents**, avec le dossier injecté au démarrage de l'appel (variables dynamiques) | Plan A gratuit : l'appel par le **widget web** ElevenLabs (navigateur), sans numéro. Option « vrai téléphone » : un numéro **Twilio trial** (gratuit, sans CB ; numéros vérifiés uniquement, 10 min max, message « trial » lu en début d'appel). Utiliser les crédits ElevenLabs du Builders Pack. |
+| **LLM + OCR** | **Claude** : boucle d'agent avec outils, et vision pour extraire le texte des photos, factures et PV en JSON structuré | L'extraction depuis les images est au cœur de la promesse « l'agent fait tout ». |
+| **Données** | **Aiven PostgreSQL** : comptes, contrats découpés en clauses avec page, dossiers, pièces, faits, échanges, actions, mémoire | Les clauses sont cherchées en plein texte, et/ou avec pgvector si l'extension est disponible. |
+| **Hébergement** | **Aiven Runtime** (exigence du brief) | Il faut d'abord relier le GitHub (rôle admin requis, §9.1). |
+
+### 13.2. Corpus de données réelles (dans ce repo)
+
+- **`data/contrats/txt/`** : 12 documents contractuels **publics** de multirisque professionnelle, extraits avec `pdftotext -layout`. Sources originales :
+  - Generali 100% Pro GA5M70F (72 p.) : https://www.air-assurances.com/pdf_doc/hangar_2022/CG_GA5M70F.pdf
+  - AXA Atouts PME (88 p.) : https://media.axa.fr/content/dam/axa-fr/image/pro/documents-informations/pdf-assurance-atout-pro-pme-cg.pdf
+  - AXA Mon Pack Entrepreneur (108 p.) : https://media.axa.fr/content/dam/axa-fr/image/pro/documents-informations/pdf-mon-pack-entrepreneur-cg.pdf
+  - Allianz Actif Pro (124 p. ; contrat services et professions libérales, pas le contrat commerçant, qui n'est pas publié) : https://www.gpm.fr/wp-content/uploads/2026/06/CG-MRP-ALLIANZ.pdf
+  - Sogessur / Société Générale, Commerçants Artisans (2016) : https://static.societegenerale.fr/pro/PRO/Repertoire_par_type_de_contenus/Fichier_a_telecharger/Fiches_numeriques/cg-commercants-artisants.pdf
+  - Groupama, dispositions communes uniquement (le texte des garanties n'est pas disponible) : https://www.coover.fr/wp-content/uploads/2019/10/conditions-generales-responsabilite-civile-professionnelle-groupama.pdf
+  - MAAF Multirisque Pro 11031 (01/2026) : https://www.maaf.fr/fr/files/live/sites/maaf/files/DOCUMENTS/Professionnels/CG/MAAF_Conditions_generales_Multirisque_pro_11031.pdf
+  - MMA Pro-PME 352 p (04/2021) : https://philtr.fr/static/pdf/insurance/mrp/mma_mrp.pdf
+  - Hiscox (CG, Conventions spéciales MRP0623, IPID) : https://www.hiscox.fr/courtage/sites/courtage/files/documents/MRP0623%20-%20Conventions%20Speciales%20Multirisques%20Dommages%20aux%20Biens%20Professionnels%20.pdf
+  - Pacifica / Crédit Agricole (IPID seul) : https://www.credit-agricole.fr/content/dam/assetsca/master/public/commun/documents/7197A.36_IPA_doc%20info_M9_PRO-122020-BD.pdf
+- **`data/research/08a_*` et `08b_*`** : pour chaque contrat, les clauses utiles après pillage ou vandalisme, avec citation courte et page, plus un tableau croisé des « postes souvent oubliés ». Exemples **vérifiés dans le texte** :
+  - **MMA** rembourse l'expert choisi par l'assuré jusqu'à 10 % de l'indemnité, dans la limite de 40 000 €, s'il a souscrit l'option.
+  - **Generali** applique un barème d'honoraires d'expert de 5 % jusqu'à 350 000 €.
+  - **Sogessur** exclut « les vols ou tentatives de vol, survenus lors d'émeutes ».
+- **`data/research/08c_*`** : des témoignages réels (2023 et octobre 2026), la jurisprudence (n° à vérifier sur Légifrance avant affichage) et **3 cas composites chiffrés** (réparateur smartphones, boulangerie, opticien) qui servent de base au benchmark.
+- **`data/research/08d_*`** : le process sinistre, le calcul des indemnités, la réglementation (mandat, consultation juridique, ORIAS), la concurrence, la taille du marché et 10 réponses aux questions d'un partner VC.
+
+### 13.3. Ce que le benchmark doit montrer
+
+Le benchmark est détaillé au §7. Les chiffres clés à afficher sur la slide :
+
+- le **rappel des postes réclamables**, avec la page correcte ;
+- les **€ identifiés** dans trois versions : déclaration naïve, LLM seul, notre agent ;
+- le **temps de constitution du dossier**, de l'agent comparé au manuel : photos et factures lues automatiquement, pièces rattachées, chaque poste chiffré et cité ;
+- le **coût par dossier**.
