@@ -12,6 +12,7 @@ from app.agents.intake import handlers as intake_handlers  # noqa: F401
 from app.channels.email import handlers as email_handlers  # noqa: F401
 from app.channels.email import mailboxes as email_mailboxes
 from app.channels.email import routes as email_routes
+from app.channels.telegram import bot as telegram_bot
 from app.channels.telegram import handlers as telegram_handlers  # noqa: F401
 from app.channels.telegram import routes as telegram_routes
 from app.channels.voice import handlers as voice_handlers  # noqa: F401
@@ -35,6 +36,11 @@ async def lifespan(app: FastAPI):
         await claims_graph.setup()         # workstream C: Postgres checkpointer + compiled Claims Agent graph
         if settings.worker_enabled:
             worker_task = asyncio.create_task(worker.run_forever(stop))
+        if telegram_bot.build():           # workstream C: Telegram channel (no-op without TELEGRAM_BOT_TOKEN)
+            if settings.telegram_mode == "webhook" and settings.public_base_url:
+                await telegram_bot.start_webhook()
+            else:
+                await telegram_bot.start_polling()
     log.info("robin up, commit=%s", settings.git_commit)
     try:
         yield
@@ -46,6 +52,7 @@ async def lifespan(app: FastAPI):
                 await worker_task
             except asyncio.CancelledError:
                 pass
+        await telegram_bot.stop()
         await claims_graph.teardown()
         await db.close_pool()
 
