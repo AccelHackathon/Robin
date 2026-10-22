@@ -74,7 +74,15 @@ def structured_result_from_payload(data: dict) -> dict:
     # Drop trailing unanswered slots beyond the questions that were actually asked.
     while answers and not answers[-1]["answered"] and len(answers) > 1 and not answers[-2]["answered"]:
         answers.pop()
-    for ans, verbatim in zip([a for a in answers if a["answered"]], user_turns):
+    # Verbatim: pair each agent question (turn ending with "?") with the user turn that follows it,
+    # skipping the opening "is now a good time" exchange, then align with the answered questions in order.
+    qa_pairs = []
+    for prev, nxt in zip(transcript, transcript[1:]):
+        if prev.get("role") == "agent" and nxt.get("role") == "user" and (prev.get("message") or "").rstrip().endswith("?"):
+            if "good time" in (prev.get("message") or "").lower():
+                continue
+            qa_pairs.append(nxt.get("message", ""))
+    for ans, verbatim in zip([a for a in answers if a["answered"]], qa_pairs or user_turns[1:] or user_turns):
         ans["answer_verbatim"] = verbatim
 
     reached_flag = field("reached_human")

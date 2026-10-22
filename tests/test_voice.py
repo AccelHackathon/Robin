@@ -30,9 +30,11 @@ def test_hmac_rejects_stale_timestamp():
 def test_structured_result_marks_oral_answers_and_reached_human():
     data = {
         "transcript": [
-            {"role": "agent", "message": "Hello"},
+            {"role": "agent", "message": "Hello, is now a good time?"},
+            {"role": "user", "message": "Yes, go ahead."},
+            {"role": "agent", "message": "Does the riot extension apply to the stock?"},
             {"role": "user", "message": "Yes, riot extension applies to stock."},
-            {"role": "agent", "message": "Thanks. Second question..."},
+            {"role": "agent", "message": "Thanks. Which documents support the valuation?"},
             {"role": "user", "message": "Send supplier invoices and the inventory."},
         ],
         "analysis": {
@@ -49,12 +51,23 @@ def test_structured_result_marks_oral_answers_and_reached_human():
     assert r["reached_human"] is True
     assert [a["question_index"] for a in r["answers"]] == [1, 2]
     assert r["answers"][0]["answer_verbatim"] == "Yes, riot extension applies to stock."
+    assert r["answers"][1]["answer_verbatim"] == "Send supplier invoices and the inventory."
     assert r["insurer_reference"] == "SIN-2026-104201"
 
 
 def test_structured_result_no_human():
     r = structured_result_from_payload({"transcript": [{"role": "agent", "message": "Hello?"}], "analysis": {}})
     assert r["reached_human"] is False and r["answers"] == []
+
+
+def test_unanswered_question_keeps_rationale():
+    data = {"transcript": [{"role": "agent", "message": "Q?"}, {"role": "user", "message": "It depends."}],
+            "analysis": {"data_collection_results": {
+                "reached_human": {"value": True},
+                "answer_1": {"value": "", "rationale": "The representative said it depends."}}}}
+    r = structured_result_from_payload(data)
+    assert r["answers"][0]["answered"] is False
+    assert "depends" in r["answers"][0]["rationale"]
 
 
 def test_dynamic_variables_are_strings_and_numbered():
