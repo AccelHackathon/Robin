@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app import db, worker
+from app.agents.claims import graph as claims_graph
 from app.agents.claims import handlers as claims_handlers  # noqa: F401  (registers worker handlers)
 from app.agents.insurer_sim import handlers as insurer_sim_handlers  # noqa: F401
 from app.agents.intake import handlers as intake_handlers  # noqa: F401
@@ -31,6 +32,7 @@ async def lifespan(app: FastAPI):
         applied = await db.run_migrations()
         log.info("migrations applied: %s", applied or "none")
         await email_mailboxes.bootstrap()  # workstream A: simulated insurer inbox (idempotent)
+        await claims_graph.setup()         # workstream C: Postgres checkpointer + compiled Claims Agent graph
         if settings.worker_enabled:
             worker_task = asyncio.create_task(worker.run_forever(stop))
     log.info("robin up, commit=%s", settings.git_commit)
@@ -44,6 +46,7 @@ async def lifespan(app: FastAPI):
                 await worker_task
             except asyncio.CancelledError:
                 pass
+        await claims_graph.teardown()
         await db.close_pool()
 
 

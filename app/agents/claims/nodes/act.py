@@ -1,0 +1,195 @@
+"""`act` node: decide what leaves the system this turn and build the drafts (PRD 2.3).
+
+Robin is a procedural layer. Drafts here state facts, cite the policy, ask for documents,
+follow up and explain. They never recommend, accept or originate an amount — the review gate
+enforces it, these templates respect it.
+"""
+
+from __future__ import annotations
+
+from typing import Any
+
+from app.agents.claims.state import Draft
+from app.config import settings
+
+DAY0_CHECKLIST_EN = (
+    "Here is what to do today to protect your claim:\n"
+    "1. File a police complaint (plainte) and keep the receipt — your policy sets a short deadline after a theft or vandalism.\n"
+    "2. Take photos of all damage before any repair or clean-up.\n"
+    "3. Secure the premises (temporary boarding, guarding) and keep every invoice — these costs are usually claimable.\n"
+    "4. Do not start repairs beyond emergency measures without the insurer's written approval.\n"
+    "5. Gather: supplier invoices for stock, your last inventory, till/sales export, equipment invoices, and a list of customer items held in the shop.\n"
+    "I have sent the initial declaration to your insurer today. Send me documents here as you find them."
+)
+
+
+def _short(claim_id: str) -> str:
+    return claim_id.split("-")[0][:8].upper()
+
+
+def _insurer_email(memory: dict[str, Any]) -> str | None:
+    b = memory.get("business") or {}
+    return b.get("insurer_contact_email") or settings.simulated_insurer_email
+
+
+def _business_line(memory: dict[str, Any]) -> str:
+    b = memory.get("business") or {}
+    parts = [b.get("name"), f"SIRET {b['siret']}" if b.get("siret") else None, b.get("address")]
+    return ", ".join(x for x in parts if x) or "l'entreprise assurée"
+
+
+def declaration_email(memory: dict[str, Any], claim_id: str) -> Draft:
+    c = memory["claim"]
+    b = memory.get("business") or {}
+    loss_date = c.get("loss_date").isoformat() if c.get("loss_date") else "à confirmer"
+    nature = c.get("loss_type") or "dommages aux biens professionnels"
+    body = (
+        f"Madame, Monsieur,\n\n"
+        f"Agissant en vertu du mandat écrit qui nous a été confié par {_business_line(memory)}, nous vous déclarons par la présente un sinistre "
+        f"survenu le {loss_date} dans les locaux professionnels situés {b.get('address') or 'à l’adresse assurée'}.\n\n"
+        f"Nature du sinistre : {nature}.\n"
+        f"Référence de votre dossier chez nous : RB-{_short(claim_id)}.\n\n"
+        f"Un état des pertes détaillé, accompagné des justificatifs, vous sera transmis dès que possible, sous réserve de compléments. "
+        f"Nous vous remercions de nous confirmer l’ouverture du dossier et de nous indiquer la référence attribuée ainsi que les pièces attendues.\n\n"
+        f"Nous vous prions d’agréer, Madame, Monsieur, l’expression de nos salutations distinguées.\n\n"
+        f"Robin — assistant de gestion de sinistre, pour le compte de {b.get('name') or 'l’assuré'}"
+    )
+    return Draft(channel="email", language="fr", recipient_role="insurer", to=_insurer_email(memory),
+                 subject=f"Déclaration de sinistre — {b.get('name') or 'assuré'} — [RB-{_short(claim_id)}]", body=body,
+                 attachment_ids=[], amounts_eur=[], loss_item_ids=[], quotes=[], fact_ids_used=[], purpose="initial_declaration",
+                 requested_items=[], next_wait=None)
+
+
+def day0_checklist(claim_id: str) -> Draft:
+    return Draft(channel="telegram", language="en", recipient_role="client", to=None, subject=None, body=DAY0_CHECKLIST_EN,
+                 attachment_ids=[], amounts_eur=[], loss_item_ids=[], quotes=[], fact_ids_used=[], purpose="ask_client",
+                 requested_items=["police complaint receipt", "photos", "supplier invoices", "last inventory", "till export", "customer items list"],
+                 next_wait="awaiting_client")
+
+
+def ack_document(analysis: dict[str, Any], memory: dict[str, Any]) -> Draft:
+    if analysis.get("duplicates") and not analysis.get("new_evidence"):
+        body = "I already have this document on file — I have not counted it twice. Anything else you can send?"
+    else:
+        n = len(analysis.get("new_evidence", []))
+        body = f"Received and filed ({n} item{'s' if n != 1 else ''}). " + _still_needed(memory)
+    return Draft(channel="telegram", language="en", recipient_role="client", to=None, subject=None, body=body, attachment_ids=[],
+                 amounts_eur=[], loss_item_ids=[], quotes=[], fact_ids_used=[], purpose="ask_client", requested_items=[], next_wait="awaiting_client")
+
+
+def ack_message(memory: dict[str, Any]) -> Draft:
+    body = "Noted and added to your file. " + _still_needed(memory)
+    return Draft(channel="telegram", language="en", recipient_role="client", to=None, subject=None, body=body, attachment_ids=[],
+                 amounts_eur=[], loss_item_ids=[], quotes=[], fact_ids_used=[], purpose="ask_client", requested_items=[], next_wait="awaiting_client")
+
+
+def _still_needed(memory: dict[str, Any]) -> str:
+    have = {e.get("evidence_type") for e in memory.get("evidence", [])}
+    wanted = [("police_report", "the police complaint receipt"), ("invoice", "supplier invoices"), ("inventory", "your last inventory"),
+              ("photo", "photos of the damage")]
+    missing = [label for key, label in wanted if key not in have]
+    return ("Still useful: " + ", ".join(missing) + ".") if missing else "Your file has the core documents; I am preparing the loss statement."
+
+
+def confirmation_request_email(memory: dict[str, Any], claim_id: str, fact_ids: list[str]) -> Draft:
+    facts = [f for f in memory["facts"] if str(f["id"]) in fact_ids]
+    lines = "\n".join(f"- {f['statement']}" for f in facts) or "- (voir transcription de l’appel)"
+    b = memory.get("business") or {}
+    body = (
+        f"Madame, Monsieur,\n\nÀ la suite de notre échange téléphonique de ce jour concernant le dossier RB-{_short(claim_id)} ({b.get('name') or 'assuré'}), "
+        f"nous vous remercions de bien vouloir nous confirmer par écrit les éléments suivants :\n{lines}\n\n"
+        f"Dans l’attente de votre confirmation, nous vous prions d’agréer, Madame, Monsieur, nos salutations distinguées.\n\nRobin — pour le compte de {b.get('name') or 'l’assuré'}"
+    )
+    return Draft(channel="email", language="fr", recipient_role="insurer", to=_insurer_email(memory),
+                 subject=f"Demande de confirmation écrite — [RB-{_short(claim_id)}]", body=body, attachment_ids=[], amounts_eur=[],
+                 loss_item_ids=[], quotes=[], fact_ids_used=[], purpose="confirmation_request", requested_items=[], next_wait="awaiting_insurer_email")
+
+
+def call_summary_to_client(fact_ids: list[str], memory: dict[str, Any]) -> Draft:
+    facts = [f for f in memory["facts"] if str(f["id"]) in fact_ids]
+    lines = "\n".join(f"• {f['statement'].replace('Insurer (by phone): ', '')}" for f in facts)
+    body = ("I spoke with your insurer. What they said on the phone (recorded as oral, to be confirmed — it does not change your policy terms until written):\n"
+            f"{lines}\n\nI have asked them to confirm in writing.")
+    return Draft(channel="telegram", language="en", recipient_role="client", to=None, subject=None, body=body, attachment_ids=[], amounts_eur=[],
+                 loss_item_ids=[], quotes=[], fact_ids_used=[], purpose="call_summary", requested_items=[], next_wait=None)
+
+
+def followup_email(memory: dict[str, Any], claim_id: str, reason: str) -> Draft:
+    b = memory.get("business") or {}
+    body = (
+        f"Madame, Monsieur,\n\nSauf erreur de notre part, nous restons dans l’attente de votre retour concernant le dossier RB-{_short(claim_id)} ({b.get('name') or 'assuré'}) : {reason}.\n\n"
+        f"Nous vous remercions de nous indiquer l’état d’avancement du dossier et, le cas échéant, les pièces complémentaires attendues.\n\n"
+        f"Nous vous prions d’agréer, Madame, Monsieur, nos salutations distinguées.\n\nRobin — pour le compte de {b.get('name') or 'l’assuré'}"
+    )
+    return Draft(channel="email", language="fr", recipient_role="insurer", to=_insurer_email(memory), subject=f"Relance — [RB-{_short(claim_id)}]",
+                 body=body, attachment_ids=[], amounts_eur=[], loss_item_ids=[], quotes=[], fact_ids_used=[], purpose="followup", requested_items=[],
+                 next_wait="awaiting_insurer_email")
+
+
+def offer_summary(memory: dict[str, Any], analysis: dict[str, Any]) -> Draft:
+    total = analysis.get("offer_total")
+    documented = round(sum(float(li["amount_claimed_eur"]) for li in memory["loss_items"] if li.get("amount_claimed_eur") is not None), 2)
+    release = analysis.get("release_terms") or []
+    parts = ["Your insurer has sent an offer."]
+    amounts: list[float] = []
+    if total is not None:
+        parts.append(f"Offer total: {total:,.2f} €.".replace(",", " "))
+        amounts.append(total)
+    if documented:
+        parts.append(f"Your documented loss statement totals {documented:,.2f} €.".replace(",", " "))
+        amounts.append(documented)
+        if total is not None and documented:
+            parts.append(f"The offer covers {round(100 * total / documented)}% of what is documented.")
+    if release:
+        parts.append("The documents include release language (" + ", ".join(release) + "). Signing such a document extinguishes further claims on this loss "
+                     "(art. 2052 C. civ.); for business property there is no withdrawal period after signature.")
+    parts.append("You can accept, ask for details, or contest. Options that exist: a written complaint to the insurer, the insurance ombudsman (if eligible), "
+                 "a loss assessor of your choice, a lawyer. Nothing is accepted unless you tell me to.")
+    return Draft(channel="telegram", language="en", recipient_role="client", to=None, subject=None, body="\n".join(parts), attachment_ids=[],
+                 amounts_eur=amounts, loss_item_ids=[], quotes=[], fact_ids_used=[], purpose="offer_summary", requested_items=["decision: accept / ask / contest"],
+                 next_wait="awaiting_signature_decision")
+
+
+def blocked_notice(violations: list[dict[str, Any]]) -> Draft:
+    kinds = sorted({v["type"] for item in violations for v in item.get("violations", [])})
+    body = ("I prepared a message for your insurer but held it back: " + ", ".join(k.replace("_", " ") for k in kinds) +
+            ". I need your confirmation on the facts and figures involved before anything is sent. Could you confirm or send the supporting document?")
+    return Draft(channel="telegram", language="en", recipient_role="client", to=None, subject=None, body=body, attachment_ids=[], amounts_eur=[],
+                 loss_item_ids=[], quotes=[], fact_ids_used=[], purpose="ask_client", requested_items=["confirmation"], next_wait="awaiting_client")
+
+
+async def build_drafts(state: dict[str, Any]) -> list[Draft]:
+    memory, triage, analysis = state["memory"], state.get("triage", {}), state.get("analysis", {}) or {}
+    kind, claim_id = triage.get("kind"), state["claim_id"]
+    drafts: list[Draft] = []
+
+    if state.get("review_failures", 0) > 0 and state.get("violations"):
+        return [blocked_notice(state["violations"])]
+
+    if triage.get("is_new_claim"):
+        drafts.append(declaration_email(memory, claim_id))
+        drafts.append(day0_checklist(claim_id))
+        return drafts
+
+    if triage.get("decision") == "present_offer":
+        drafts.append(offer_summary(memory, analysis))
+    elif kind == "document":
+        drafts.append(ack_document(analysis, memory))
+    elif kind == "message":
+        drafts.append(ack_message(memory))
+    elif kind == "call_ended":
+        ids = analysis.get("new_fact_ids", [])
+        if ids:
+            drafts.append(call_summary_to_client(ids, memory))
+            drafts.append(confirmation_request_email(memory, claim_id, ids))
+        else:
+            drafts.append(Draft(channel="telegram", language="en", recipient_role="client", to=None, subject=None,
+                                body="I couldn't reach the insurer by phone. I've sent the same questions by email.", attachment_ids=[], amounts_eur=[],
+                                loss_item_ids=[], quotes=[], fact_ids_used=[], purpose="call_summary", requested_items=[], next_wait="awaiting_insurer_email"))
+    elif kind == "followup_due":
+        drafts.append(followup_email(memory, claim_id, state["event"].get("payload", {}).get("reason") or "notre précédent envoi"))
+    elif kind == "email_received":
+        drafts.append(Draft(channel="telegram", language="en", recipient_role="client", to=None, subject=None,
+                            body=f"Your insurer wrote back: « {state['event'].get('payload', {}).get('subject') or 'message'} ». I have filed it and will act on it.",
+                            attachment_ids=[], amounts_eur=[], loss_item_ids=[], quotes=[], fact_ids_used=[], purpose="insurer_update", requested_items=[], next_wait=None))
+    return drafts

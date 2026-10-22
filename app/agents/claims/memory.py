@@ -31,7 +31,7 @@ async def get_claim_memory(claim_id: str) -> dict[str, Any]:
             raise LookupError(f"claim {claim_id} not found")
         acct = str(claim["account_id"])
         business = await _one(conn, "SELECT * FROM businesses WHERE account_id = %s ORDER BY created_at DESC LIMIT 1", (acct,))
-        mandate = await _one(conn, "SELECT * FROM mandates WHERE account_id = %s ORDER BY created_at DESC LIMIT 1", (acct,))
+        mandate = await _one(conn, "SELECT * FROM mandates WHERE account_id = %s AND revoked_at IS NULL ORDER BY signed_at DESC NULLS LAST LIMIT 1", (acct,))
         contracts = await _rows(
             conn,
             """SELECT id, doc_type, filename, insurer_name, product_name, version_label, document_date, valid_from, valid_to, page_count

@@ -29,6 +29,8 @@ class Settings(BaseSettings):
     insurer_test_phone: str | None = None                # verified number of the teammate playing the insurer
 
     public_base_url: str | None = None
+    telegram_mode: str = "polling"            # polling | webhook  (C)
+    telegram_bot_username: str | None = None  # B's deep link
     worker_enabled: bool = True
     worker_poll_seconds: float = 1.0
 
