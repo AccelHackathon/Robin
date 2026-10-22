@@ -67,6 +67,14 @@ async def create_claim(account_id: str, summary: str | None, loss_date=None, los
         await conn.commit()
     claim_id = str(row["id"])
     try:
+        from app.agents.claims.brain import profiles
+
+        async with db.pool.connection() as conn:
+            ins = await (await conn.execute("SELECT insurer_name FROM businesses WHERE account_id = %s ORDER BY created_at DESC LIMIT 1", (account_id,))).fetchone()
+        await profiles.on_claim_opened(claim_id, ins[0] if ins else None)
+    except Exception:
+        log.exception("insurer profile update failed for claim %s", claim_id)
+    try:
         from app.deadlines.instantiate import instantiate_for_claim  # C4
 
         await instantiate_for_claim(claim_id)

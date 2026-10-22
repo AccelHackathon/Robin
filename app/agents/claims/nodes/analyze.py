@@ -16,6 +16,7 @@ from psycopg.rows import dict_row
 
 from app import db
 from app.agents.claims import tools_impl as T
+from app.agents.claims.brain import covers, positions, profiles
 from app.contracts import LossItemInput
 from app.agents.review.amounts import extract_amounts_eur
 from app.agents.review.rules import has_release_language
@@ -117,11 +118,14 @@ async def _structure_narrative(state: dict[str, Any], text: str, out: dict[str, 
             computation_detail={"stated_by": "client", "value_basis": it.get("value_basis"), "quantity": it.get("quantity"), "unit_value_eur": it.get("unit_value_eur")},
             evidence_ids=[], clause_id=clause_id, clause_page=page, clause_quote=quote, condition_note=note, status="unsupported",
         ))
+    if n.get("closure_days"):
+        out["closure_days"] = n["closure_days"]
+        bi = covers.ensure_bi_item(memory, n["closure_days"])
+        if bi:
+            items.append(LossItemInput(**bi))
     if items:
         stored = await T.update_loss_statement(claim_id, items)
         out["items_created"] = [str(r["id"]) for r in stored]
-    if n.get("closure_days"):
-        out["closure_days"] = n["closure_days"]
 
 
 async def _find_clause(memory: dict[str, Any], query: str):
@@ -189,6 +193,9 @@ async def run(state: dict[str, Any]) -> dict[str, Any]:
             stmt = f"Insurer (by phone): Q: {q.get('question')} — A: {q.get('answer_verbatim') or q.get('answer_summary')}"
             f = await T.log_fact(claim_id, stmt, "insurer_oral", q.get("confidence") or "medium")
             out["new_fact_ids"].append(f.fact_id)
+        spoken = "\n".join(f"{q.get('question')}: {q.get('answer_verbatim') or q.get('answer_summary')}" for q in answers) or (p.get("transcript") or "")
+        if spoken.strip():
+            out["positions"] = await positions.record(claim_id, channel="phone", text=spoken, who=sr.get("insurer_reference"))
         if not answers and p.get("transcript"):
             f = await T.log_fact(claim_id, f"Insurer call transcript (unstructured): {p['transcript'][:2000]}", "insurer_oral", "low")
             out["new_fact_ids"].append(f.fact_id)
@@ -199,6 +206,12 @@ async def run(state: dict[str, Any]) -> dict[str, Any]:
         body, subject = p.get("body_text") or "", p.get("subject") or ""
         f = await T.log_fact(claim_id, f"Insurer email « {subject} »: {body[:3000]}", "insurer_email", "high")
         out["new_fact_ids"].append(f.fact_id)
+        insurer = (state["memory"].get("business") or {}).get("insurer_name")
+        out["positions"] = await positions.record(claim_id, channel="email", text=f"{subject}\n{body}", communication_id=p.get("communication_id"), who=p.get("from"))
+        await profiles.on_first_insurer_reply(claim_id, insurer)
+        doc_kinds = [x["topic"] for x in out["positions"] if x.get("topic") == "document_request"]
+        if doc_kinds:
+            await profiles.on_documents_requested(claim_id, insurer, [(x.get("summary_en") or "document")[:40] for x in out["positions"] if x.get("topic") == "document_request"])
         if state.get("triage", {}).get("decision") == "present_offer":
             amounts = extract_amounts_eur(body)
             total = max(amounts) if amounts else None
@@ -216,9 +229,20 @@ async def run(state: dict[str, Any]) -> dict[str, Any]:
             out["offer_id"] = str(row[0])
             out["offer_total"] = total
             out["release_terms"] = release
+            documented = sum(float(li["amount_claimed_eur"]) for li in state["memory"]["loss_items"] if li.get("amount_claimed_eur") is not None)
+            await profiles.on_first_offer(claim_id, insurer, total, documented or None, bool(release))
         out["summary"] = "insurer email logged" + (f"; offer {out['offer_id']} total {out.get('offer_total')}" if out["offer_id"] else "")
 
     else:
         out["summary"] = f"no analysis for event kind {kind}"
 
+    # Cover matching on the current loss statement whenever it may have changed.
+    if out.get("items_created") or out.get("new_evidence") or kind == "message":
+        fresh = await T.get_claim_memory(claim_id)
+        if fresh["loss_items"]:
+            out["cover_matches"] = await covers.match_claim(claim_id, fresh)
+            statuses = {}
+            for m in out["cover_matches"]:
+                statuses[m["status"]] = statuses.get(m["status"], 0) + 1
+            out["summary"] += f"; covers: {statuses}"
     return out
