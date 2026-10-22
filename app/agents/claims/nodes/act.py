@@ -60,8 +60,18 @@ def declaration_email(memory: dict[str, Any], claim_id: str) -> Draft:
                  requested_items=[], next_wait=None)
 
 
-def day0_checklist(claim_id: str) -> Draft:
-    return Draft(channel="telegram", language="en", recipient_role="client", to=None, subject=None, body=DAY0_CHECKLIST_EN,
+def _deadline_lines(memory: dict[str, Any]) -> str:
+    rows = [t for t in memory.get("deadlines", []) if t.get("status") == "pending" and t.get("kind") in ("police_report", "declaration", "loss_statement")]
+    if not rows:
+        return ""
+    labels = {"police_report": "police complaint", "declaration": "declaration to the insurer", "loss_statement": "detailed statement of loss"}
+    return "\nDates that apply to your file:\n" + "\n".join(
+        f"• {labels[t['kind']]}: by {t['due_at'].date().isoformat()}" + (f" (policy p. {t['page']})" if t.get("page") else (f" ({t['legal_basis'].split(';')[0]})" if t.get("legal_basis") else ""))
+        for t in sorted(rows, key=lambda t: t["due_at"]))
+
+
+def day0_checklist(claim_id: str, memory: dict[str, Any] | None = None) -> Draft:
+    return Draft(channel="telegram", language="en", recipient_role="client", to=None, subject=None, body=DAY0_CHECKLIST_EN + _deadline_lines(memory or {}),
                  attachment_ids=[], amounts_eur=[], loss_item_ids=[], quotes=[], fact_ids_used=[], purpose="ask_client",
                  requested_items=["police complaint receipt", "photos", "supplier invoices", "last inventory", "till export", "customer items list"],
                  next_wait="awaiting_client")
@@ -221,7 +231,7 @@ async def build_drafts(state: dict[str, Any]) -> list[Draft]:
 
     if triage.get("is_new_claim"):
         drafts.append(declaration_email(memory, claim_id))
-        drafts.append(day0_checklist(claim_id))
+        drafts.append(day0_checklist(claim_id, memory))
         return drafts
 
     if triage.get("decision") == "present_offer":
