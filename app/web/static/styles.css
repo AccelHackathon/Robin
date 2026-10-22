@@ -26,3 +26,5 @@ header nav{background:rgba(16,79,151,.72);border:1px solid #ffffff30;border-radi
 .coverage-row summary{cursor:pointer;list-style-position:outside;margin-left:15px}.coverage-row[open] summary{margin-bottom:10px}.coverage-row summary:focus-visible{outline:2px solid #2375c7;outline-offset:4px}
 
 .policy-details>summary{cursor:pointer;line-height:1.5}.policy-details[open]>summary{margin-bottom:16px}
+
+.channel-buttons{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:24px}.channel-buttons .connect{margin-top:0}.channel-buttons>button,.channel-buttons>a{width:100%;min-height:60px}.whatsapp-soon{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}.whatsapp-soon:disabled{opacity:1;background:#f0f4f8;color:#62738a;cursor:not-allowed}.soon-badge{font-size:10px;font-weight:500;letter-spacing:.02em}@media(max-width:560px){.channel-buttons{grid-template-columns:1fr}}
