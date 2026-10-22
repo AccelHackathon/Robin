@@ -7,11 +7,14 @@
 - [ ] Telegram bot created (BotFather) and token set on Runtime — **blocked on token**; code ready (`bot.py`, `links.py`, `media.py`, `transcribe.py`, `send.py`, `routes.py`)
 - [x] Linking `/start <code>` → `telegram_links`, welcome message (falls back to a profile-based welcome until B's `write_welcome_brief` exists)
 - [x] Claims Agent graph with Postgres checkpointer; resume on events (smoke-tested: `scripts/smoke_claims_graph.py`)
-- [~] Tools implemented — DB tools done (`tools_impl.py`), outbound via gate done (`outbound.py`); `read_document` is registration-only until the LLM step lands
-- [x] Review gate deterministic controls + `review_log` (`tests/test_review_gate.py`); LLM judge pending
-- [ ] Deadline instantiation per claim
-- [ ] Offer presentation + release-language detection
-- [ ] Benchmark A/B/C × 3 variants
+- [x] Tools implemented — DB tools (`tools_impl.py`), outbound via gate (`outbound.py`), `read_document` + `extract_narrative` with OpenAI (`nodes/llm.py`, cached by sha256)
+- [x] Review gate deterministic controls + `review_log` (`tests/test_review_gate.py`); LLM judge not implemented
+- [x] Brain (`brain/`): loss item ↔ cover matching with caps/pages, running claim digest (never ask twice), insurer position ledger (oral vs written), cross-claim insurer profiles — `tests/test_claims_brain.py`
+- [x] Offer detection, `offers` row, release-language detection, factual offer summary (`analyze.py`, `act.py`)
+- [ ] Deadline instantiation per claim (`app/deadlines/` empty; only D+7 / D+3 follow-ups today)
+- [ ] Statement-of-loss email with cited items; contestation transmission on client instruction
+- [ ] Claims Agent triggering `start_call` (calls currently via `POST /internal/calls`)
+- [ ] Benchmark A/B/C × 3 variants (`bench/` empty)
 
 ## Owned paths
 
