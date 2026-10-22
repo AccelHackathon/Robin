@@ -41,7 +41,7 @@ async function refreshProfile(){
     document.querySelector('#telegram-status').textContent=data.telegram_linked ? (data.welcome_status==='failed'?'Telegram connected. The welcome message could not be sent.':'Telegram connected.'):'Open Telegram, then tap Start to connect with Robin.';
     const connect=document.querySelector('.connect');
     if(connect && (data.link_expired||data.telegram_linked)){connect.hidden=true;}
-    if(data.link_expired&&!data.telegram_linked)document.querySelector('#telegram-status').textContent='Your Telegram link has expired. Get a new link below.';
+    if(data.link_expired&&!data.telegram_linked&&document.querySelector('#renew-link-form'))document.querySelector('#telegram-status').textContent='Your Telegram link has expired. Get a new link below.';
     const renewal=document.querySelector('#renew-link-form');
     if(renewal)renewal.hidden=data.telegram_linked||!data.link_expired;
     const help=document.querySelector('#telegram-help');

@@ -27,6 +27,15 @@ header nav{background:rgba(16,79,151,.72);border:1px solid #ffffff30;border-radi
 
 .policy-details>summary{cursor:pointer;line-height:1.5}.policy-details[open]>summary{margin-bottom:16px}
 
-.channel-buttons{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:24px}.channel-buttons .connect{margin-top:0}.channel-buttons>button,.channel-buttons>a{width:100%;min-height:60px}.whatsapp-soon{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}.whatsapp-soon:disabled{opacity:1;background:#f0f4f8;color:#62738a;cursor:not-allowed}.soon-badge{font-size:10px;font-weight:500;letter-spacing:.02em}@media(max-width:560px){.channel-buttons{grid-template-columns:1fr}}
-
-.channel-logo{width:24px;height:24px;flex:none}.channel-buttons .channel-telegram{background:#229ed9;color:#fff;gap:12px}.channel-buttons .channel-telegram:hover{background:#168bc2}.channel-buttons .channel-telegram:disabled{opacity:1;background:#229ed9;cursor:not-allowed}.channel-buttons .whatsapp-soon:disabled{flex-direction:row;gap:12px;background:#25d366;border-color:#25d366;color:#073b20;opacity:1}.whatsapp-soon .channel-logo{color:#fff}.channel-caption{display:flex;flex-direction:column;gap:4px;text-align:left}
+.channel-buttons{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:24px}
+.channel-buttons>a,.channel-buttons>button{display:flex;align-items:center;justify-content:flex-start;gap:14px;width:100%;min-height:80px;padding:18px 20px;border:1px solid #d5e3f0;border-radius:18px;background:#ffffffa8;color:var(--ink);box-shadow:none;text-decoration:none;font-size:14px;font-weight:550;letter-spacing:-.15px}
+.channel-buttons .connect{margin-top:0}
+.channel-buttons .channel-telegram:hover{background:#fff;border-color:#9cbfdf}
+.channel-buttons .channel-telegram:disabled{opacity:1;cursor:not-allowed;background:#ffffffa8;color:var(--ink)}
+.channel-logo{width:24px;height:24px;flex:none}
+.channel-telegram .channel-logo{color:#3292c5}
+.channel-buttons .whatsapp-soon:disabled{opacity:1;cursor:not-allowed;background:#ffffff50;color:#486487}
+.whatsapp-soon .channel-logo{color:#42956c}
+.channel-caption{display:flex;flex-direction:column;gap:5px;text-align:left}
+.soon-badge{font-size:11px;font-weight:400;letter-spacing:0;color:#6d8199}
+@media(max-width:560px){.channel-buttons{grid-template-columns:1fr}.channel-buttons>a,.channel-buttons>button{min-height:72px}}
