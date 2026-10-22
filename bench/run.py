@@ -134,9 +134,12 @@ async def run_llm_only(case: dict[str, Any], doc: dict[str, Any], catalog_keys: 
 
 
 async def run_agent(case: dict[str, Any], doc: dict[str, Any]) -> dict[str, Any]:
-    """Seed an account with the case's coverage profile, feed the narrative and the evidence through the agent's own pipeline."""
-    if not settings.openai_api_key:
-        return {"variant": "agent", "note": "not run — OPENAI_API_KEY missing (narrative extraction needs the model)"}
+    """Seed an account with the case's coverage profile, feed the narrative and the evidence through the agent's own pipeline.
+
+    With a model key the narrative is structured by the model. Without one, the deterministic path runs alone:
+    narrative logged as a fact, closure period taken as the client's statement, items created from the documents,
+    purchase-price recomputation, cover matching, business interruption from the accounting export. Labelled as such.
+    """
     acct = str(uuid.uuid4())
     started = time.perf_counter()
     async with db.pool.connection() as conn:
@@ -149,17 +152,25 @@ async def run_agent(case: dict[str, Any], doc: dict[str, Any]) -> dict[str, Any]
             await conn.execute(
                 """INSERT INTO coverage_profile (account_id, guarantee, subscribed, ceiling, deductible_detail, source_clause_id, source_document_id, page, quote, confidence)
                    VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,'bench')""",
-                (acct, cov["guarantee"], cov["subscribed"], json.dumps(cov.get("ceiling")) if cov.get("ceiling") else None,
+                (acct, cov["guarantee"], {"yes": True, "no": False}.get(cov["subscribed"]), json.dumps(cov.get("ceiling")) if cov.get("ceiling") else None,
                  json.dumps(cov.get("deductible")) if cov.get("deductible") else None, cl["id"] if cl else None, doc["id"], cov.get("page"), (cl["body"][:200] if cl else None)))
         await conn.commit()
     claim_id = await H.create_claim(acct, case["narrative"], loss_date=date.fromisoformat(case["loss_date"]), loss_type=case["loss_type"])
-
-    # 1. narrative → facts + client-stated items (model) + cover matching
+    from app.agents.claims.brain import evidence_items
     from app.agents.claims.nodes import analyze as AN
-    state = {"claim_id": claim_id, "event": {"kind": "message", "payload": {"text": case["narrative"]}}, "memory": await M.get_claim_memory(claim_id), "triage": {}}
-    await AN.run(state)
 
-    # 2. evidence → evidence rows (amounts as the vision step would extract them) → recomputation at purchase price
+    with_model = bool(settings.openai_api_key)
+    if with_model:
+        state = {"claim_id": claim_id, "event": {"kind": "message", "payload": {"text": case["narrative"]}}, "memory": await M.get_claim_memory(claim_id), "triage": {}}
+        await AN.run(state)
+    else:
+        await T.log_fact(claim_id, case["narrative"], "client", "medium")
+        mem = await M.get_claim_memory(claim_id)
+        bi = covers.ensure_bi_item(mem, case.get("closure_days"))
+        if bi:
+            from app.contracts import LossItemInput
+            await T.update_loss_statement(claim_id, [LossItemInput(**bi)])
+
     new_ids = []
     async with db.pool.connection() as conn:
         for e in case["evidence"]:
@@ -173,6 +184,10 @@ async def run_agent(case: dict[str, Any], doc: dict[str, Any]) -> dict[str, Any]
     mem = await M.get_claim_memory(claim_id)
     await recompute.recompute_from_evidence(claim_id, mem, new_ids)
     mem = await M.get_claim_memory(claim_id)
+    await evidence_items.create_items_from_evidence(claim_id, mem, new_ids)
+    mem = await M.get_claim_memory(claim_id)
+    await evidence_items.compute_business_interruption(claim_id, mem, case.get("closure_days"))
+    mem = await M.get_claim_memory(claim_id)
     await covers.match_claim(claim_id, mem)
     mem = await M.get_claim_memory(claim_id)
     latency = int((time.perf_counter() - started) * 1000)
@@ -184,19 +199,19 @@ async def run_agent(case: dict[str, Any], doc: dict[str, Any]) -> dict[str, Any]
     cited = [li for li in items if li.get("clause_page") is not None]
     ok = 0
     for li in cited:
-        if await _page_exists(str(doc["id"]), li["clause_page"]):
-            cl = await _clause_on_page(str(doc["id"]), li["clause_page"])
-            if cl and li.get("clause_quote") and quote_in_body(li["clause_quote"], cl["body"]):
-                ok += 1
+        cl = await _clause_on_page(str(doc["id"]), li["clause_page"])
+        if cl and li.get("clause_quote") and quote_in_body(li["clause_quote"], cl["body"]):
+            ok += 1
     buckets = M.amounts_for_review(mem)
     untr = A.untraceable(amounts, buckets["evidence"] + buckets["derived"] + buckets["client_instruction"])
     async with db.pool.connection() as conn:
         tok = await (await conn.execute("SELECT coalesce(sum(tokens_in),0) + coalesce(sum(tokens_out),0) FROM actions WHERE claim_id = %s", (claim_id,))).fetchone()
     supported = sum(1 for li in items if li.get("status") in ("supported", "sent"))
+    mode = "model + deterministic pipeline" if with_model else "deterministic pipeline only (no model key: narrative not structured)"
     return {"variant": "agent", "eur_identified": round(sum(amounts)), "recall": f"{r}/{n}", "recall_pct": round(100 * r / n),
             "citations_correct": f"{ok}/{len(cited)}", "citations_pct": (round(100 * ok / len(cited)) if cited else None),
-            "untraceable_amounts": len(untr), "tokens": int(tok[0]) if tok else None, "latency_ms": latency,
-            "note": f"{len(items)} items, {supported} supported by evidence; claim {claim_id}",
+            "untraceable_amounts": len(untr), "tokens": int(tok[0]) if tok else 0, "latency_ms": latency,
+            "note": f"{len(items)} items, {supported} supported by evidence; {mode}",
             "items": [{"label": li["label"], "key": li.get("catalog_key"), "amount": li.get("amount_claimed_eur") and float(li["amount_claimed_eur"]), "status": li.get("status"),
                        "page": li.get("clause_page"), "cover": ((li.get("computation_detail") or {}).get("cover") or {}).get("status")} for li in items]}
 

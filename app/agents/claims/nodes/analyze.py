@@ -198,6 +198,20 @@ async def run(state: dict[str, Any]) -> dict[str, Any]:
                 if rows:
                     out["items_recomputed"] = [{"id": str(r["id"]), "label": r["label"], "amount_eur": float(r["amount_claimed_eur"]), "version": r["version"]} for r in rows]
                     out["summary"] += f"; {len(rows)} item(s) recomputed from invoices"
+                from app.agents.claims.brain import evidence_items
+
+                fresh = await T.get_claim_memory(claim_id)
+                created = await evidence_items.create_items_from_evidence(claim_id, fresh, out["new_evidence"])
+                if created:
+                    out.setdefault("items_created", []).extend(str(r["id"]) for r in created)
+                    out["summary"] += f"; {len(created)} item(s) created from the documents"
+                fresh = await T.get_claim_memory(claim_id)
+                bi_item = next((li for li in fresh["loss_items"] if li.get("catalog_key") == "business_interruption"), None)
+                closure = ((bi_item or {}).get("computation_detail") or {}).get("closure_days_stated")
+                if closure and any(e.get("evidence_type") == "accounting" for e in fresh["evidence"]):
+                    bi = await evidence_items.compute_business_interruption(claim_id, fresh, closure)
+                    if bi:
+                        out["summary"] += "; business interruption computed from the accounting export"
         else:
             out["summary"] = "document event without a stored document"
 

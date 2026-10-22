@@ -47,6 +47,11 @@ async def get_claim_memory(claim_id: str) -> dict[str, Any]:
                ORDER BY cp.guarantee""",
             (acct,),
         )
+        # Schema stores subscribed as boolean (NULL = unknown); the PRD vocabulary is yes / no / unknown.
+        for cov in coverage:
+            cov["subscribed"] = {True: "yes", False: "no"}.get(cov.get("subscribed"), "unknown")
+            if cov.get("clause_id") is None and cov.get("source_clause_id") is not None:
+                cov["clause_id"] = cov["source_clause_id"]
         levers = await _rows(
             conn,
             """SELECT l.* FROM contract_levers l JOIN documents d ON d.id = l.document_id
@@ -109,6 +114,8 @@ def amounts_for_review(memory: dict[str, Any]) -> dict[str, list[float]]:
             instructed.append(a)
         elif li.get("amount_basis") == "formula" and li.get("clause_id"):
             derived.append(a)
+        elif li.get("amount_basis") == "invoice" and li.get("evidence_ids"):
+            derived.append(a)  # sum of selected invoice amounts: traceable by construction
     for o in memory["offers"]:
         if o.get("total_eur") is not None:
             evidence.append(float(o["total_eur"]))  # the insurer's own figure is a documented fact
