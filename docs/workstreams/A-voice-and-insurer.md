@@ -2,14 +2,19 @@
 
 **Owner:** Emile. **PRD sections:** 2.8 (expertise), 2.11 (Insurer Simulator), 3.2 rows `channels/voice`, `channels/email`, `agents/insurer_sim`; AC-8, AC-9 (release detection input), 7.2 (call failure messages).
 
-## Status
+## Status (updated 11:10)
 
-- [x] Twilio trial number `+1 573 538 3826` bought and imported into ElevenLabs (`phnum_0301m5hhx7rvfv7rftfxav8hc6ts`)
-- [x] Test agent `agent_1101m5hj0xtfftsa51r6tr0g3wjy` created; outbound call reaches `+33 6 47 50 23 84` (press any key at the Twilio trial prompt)
-- [ ] Post-call webhook → `events`
-- [ ] AgentMail mailbox per account + send + inbound webhook
-- [ ] Insurer Simulator Agent
-- [ ] Production agent prompt (procedural layer, FR/EN)
+- [x] Twilio trial number `+1 573 538 3826` imported into ElevenLabs (`phnum_0301m5hhx7rvfv7rftfxav8hc6ts`); outbound call reaches `+33 6 47 50 23 84` (press any key at the Twilio trial prompt)
+- [x] Production agent `agent_1101m5hj0xtfftsa51r6tr0g3wjy` configured (procedural-layer prompt, data-collection for the structured result), provisioning script `app/channels/voice/agent.py`
+- [x] Post-call webhook (`/webhooks/elevenlabs`, HMAC-verified) → `calls` + `call_ended` event; widget fallback `/voice/widget/{call_id}`
+- [x] `start_call` adapter (`app/channels/voice/call.py`)
+- [x] AgentMail: mailbox per account (on `onboarding_done`), `send_email` adapter, inbound webhook (Svix-verified) → documents + `email_received`, French templates
+- [x] Insurer Simulator Agent — **tested end to end on production**: declaration → ack with reference + document requests; offer step attaches the "solde de tout compte" release PDF
+- [x] Simulated insurer inbox `sinistres-demo-assureur@agentmail.to`; AgentMail webhook registered
+- [ ] Live post-call webhook test end to end (agent now has the webhook; retest with a real call)
+- [ ] Verify answering-machine / no-answer path sets `failed` + `call_ended`
+
+Key resources: agent mailbox is created per account; the only secret still missing globally is `ANTHROPIC_API_KEY` (not needed by stream A). `OPENAI_API_KEY` powers the voice agent LLM and is set.
 
 ## Owned paths
 
