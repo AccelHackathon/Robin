@@ -303,6 +303,18 @@ def _cover_lines(profile: dict, guarantee: str | None, risk_key: str) -> tuple[l
     return lines, prevention, deadline, clause_id, page
 
 
+def policy_amounts(profile: dict, guarantee: str | None, risk_key: str) -> list[float]:
+    """Caps and deductibles quoted from the coverage profile: traceable to a clause, not to evidence."""
+    out: list[float] = []
+    for g in set([guarantee] if guarantee else []) | set(RISKS[risk_key].guarantees):
+        c = profile["covers"].get(g) or {}
+        for field in ("ceiling", "deductible"):
+            v = c.get(field)
+            if isinstance(v, dict) and isinstance(v.get("amount"), (int, float)):
+                out.append(float(v["amount"]))
+    return out
+
+
 def compose_message(profile: dict, a: dict) -> tuple[str, list[dict], str, int | None, int | None]:
     risk = RISKS[a["risk_key"]]
     cover_lines, prevention, deadline, clause_id, page = _cover_lines(profile, a.get("guarantee"), a["risk_key"])
@@ -354,7 +366,8 @@ async def gate(state: SentinelState) -> SentinelState:
             try:
                 draft = OutboundDraft(channel="telegram", language="en", recipient_role="client", body=text)
                 ctx = ReviewContext(claim_id=None, evidence_amounts_eur=[], derived_amounts_eur=[],
-                                    client_instruction_amounts_eur=[], confirmed_fact_ids=[], cited_clause_ids=[a["clause_id"]] if a.get("clause_id") else [])
+                                    client_instruction_amounts_eur=[], confirmed_fact_ids=[], cited_clause_ids=[a["clause_id"]] if a.get("clause_id") else [],
+                                    policy_amounts_eur=policy_amounts(state["profile"], a.get("guarantee"), a["risk_key"]))
                 result = await review(draft, ctx, use_judge=False)
                 passed = result.passed
                 if not passed and result.rewrite:

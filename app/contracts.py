@@ -145,6 +145,7 @@ class ReviewContext(BaseModel):
     loss_item_ids: list[str] = Field(default_factory=list)       # loss items referenced by the draft
     quotes: list[tuple[int, str]] = Field(default_factory=list)  # (clause_id, verbatim quote) pairs used
     fact_ids_used: list[str] = Field(default_factory=list)       # facts the draft states
+    policy_amounts_eur: list[float] = Field(default_factory=list) # caps/deductibles quoted from coverage_profile (D: sentinel alerts)
 
 
 class ReviewViolation(BaseModel):

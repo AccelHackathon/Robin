@@ -78,7 +78,7 @@ def _text_checks(draft: OutboundDraft, ctx: ReviewContext) -> list[ReviewViolati
     langs = [draft.language, "fr" if draft.language == "en" else "en"]  # check both; mixed drafts happen
 
     mentioned = list(draft.amounts_eur) + amt.extract_amounts_eur(text)
-    allowed = ctx.evidence_amounts_eur + ctx.derived_amounts_eur + ctx.client_instruction_amounts_eur
+    allowed = ctx.evidence_amounts_eur + ctx.derived_amounts_eur + ctx.client_instruction_amounts_eur + ctx.policy_amounts_eur
     for a in sorted(set(amt.untraceable(mentioned, allowed))):
         out.append(ReviewViolation(type="untraceable_amount", span=f"{a:,.2f} €", fix="only evidence, derived or client-instructed amounts"))
 
