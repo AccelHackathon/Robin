@@ -4,12 +4,25 @@
 
 ## Status
 
-- [ ] Ingestion of the 12 general conditions into `documents` / `clauses`
-- [ ] Seeds: `loss_catalog`, `riot_events`
-- [ ] Synthetic particular conditions PDF for Karim
-- [ ] Intake Agent: coverage profile, levers, traps, deadlines, missing documents
-- [ ] Onboarding site (6 steps), mandate + 3 consents, deep link
-- [ ] Tracking page by link
+- [x] Ingestion of the 12 public documents into `documents` / `clauses` (local verified; production load pending)
+- [x] Seeds: `loss_catalog`, `riot_events` (research-scenario provenance retained)
+- [x] Synthetic particular conditions PDF for Karim (+ 30,000 EUR endorsement generator)
+- [x] Intake Agent: coverage profile, levers, traps, deadlines, missing documents (implemented; real-provider validation pending)
+- [x] Onboarding site (account + 4 visual steps), mandate + 3 consents, deep link (local verified; live bot pending)
+- [x] Tracking page by private, rotatable link (local verified)
+
+### Implementation checkpoint
+
+- Verification: 19 tests passed against a dedicated PostgreSQL database; import check and local `/health` (`db: ok`) passed. Desktop and 390px mobile inspected in Chrome; both fixture PDFs rendered and reviewed.
+- Production acceptance remains open: Runtime database access, model credentials, bot username/token, and A/C integration are not available in this checkout. See `app/web/README.md` for exact handoff contracts.
+
+- Local PostgreSQL: 12 corpus documents / 1,655 verbatim page-local clauses; idempotent ingestion verified. Production load pending Runtime access.
+- Web routes, durable sessions, Argon2 passwords (PRD section 9 takes precedence over B5 bcrypt), upload validation, consent records, link renewal, and coverage polling implemented.
+- Six-node Intake graph implemented; deterministic synthetic-fixture extraction tested. Real model execution requires `ANTHROPIC_API_KEY`; absent keys produce explicitly partial results and unknown subscriptions.
+- Shared additions: `TELEGRAM_BOT_USERNAME`, `SESSION_SECRET`, `INTAKE_MODEL` settings; Argon2 and ReportLab dependencies. No changes to main, worker, or shared types.
+- Integration: migration 200 fans out `web/onboarding_done` into `web/document_added` transactionally. A keeps the mailbox handler; B consumes the latter event.
+- C handoff: `onboarding.welcome_brief` is an unsent draft (review before sending); `deadline_rules.rule.status` distinguishes extracted vs to_confirm; `coverage_profile.subscribed` remains SQL boolean/NULL, serialized yes/no/unknown on the web. Private search/quote verification requires `account_id=`.
+- C handoff: urgent incident text is in `onboarding.incident` and the `onboarding_done` payload; web does not claim a declaration has been sent. C must consume it for urgent triage.
 
 ## Owned paths
 
