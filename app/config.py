@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     insurer_test_phone: str | None = None                # verified number of the teammate playing the insurer
 
     public_base_url: str | None = None
+    internal_api_token: str | None = None                # bearer for /internal/* operator endpoints
     telegram_mode: str = "polling"            # polling | webhook  (C)
     telegram_bot_username: str | None = None  # B's deep link
     session_secret: str | None = None

@@ -80,17 +80,22 @@ async def choose_step(state: SimState) -> SimState:
     return {"step_key": step.key if step else None}
 
 
-def _render(step: Step | None, state: SimState) -> tuple[str, str, bool, int]:
-    inbound, thread = state["inbound"], state["thread"]
-    body_in = inbound.get("body_text") or ""
-    ctx = {
+def _claim_context(inbound: dict, thread: dict) -> dict:
+    """Everything the simulator knows comes from the email itself (subject + body), never from Robin's memory."""
+    text = f"{inbound.get('subject') or ''}\n{inbound.get('body_text') or ''}"
+    business = _extract(text, r"pour le compte de ([^(\n,–-]+)", "") or _extract(text, r"mandataire de ([^(\n,–-]+)", "") \
+        or _extract(text, r"sinistre\s*[–-]\s*([^–\-\n]+?)\s*[–-]\s*contrat", "votre client")
+    return {
         "subject": re.sub(r"^(re|tr|fwd?)\s*:\s*", "", inbound.get("subject") or "", flags=re.I),
         "ref": thread["insurer_reference"],
-        "business_name": _extract(body_in, r"pour le compte de ([^,(\n]+)|mandataire de ([^,(\n]+)", "votre client") if False else
-                         (_extract(body_in, r"pour le compte de ([^(\n,]+)", "") or _extract(body_in, r"mandataire de ([^(\n,]+)", "votre client")),
-        "policy_number": _extract(body_in, r"contrat n°\s*([A-Z0-9\-/]+)", "non communiqué"),
+        "business_name": business.strip(),
+        "policy_number": _extract(text, r"contrat n°\s*([A-Z0-9][A-Z0-9\-/]+)", "non communiqué"),
     }
-    scenario = SCENARIOS[thread["scenario"]]
+
+
+def _render(step: Step | None, state: SimState) -> tuple[str, str, bool, int]:
+    ctx = _claim_context(state["inbound"], state["thread"])
+    scenario = SCENARIOS[state["thread"]["scenario"]]
     if step is None:
         return scenario.fallback_subject.format(**ctx), scenario.fallback_body.format(**ctx) + SIGNATURE, False, 15
     return step.subject.format(**ctx), step.body.format(**ctx) + SIGNATURE, step.attach_release_pdf, step.delay_seconds
@@ -130,12 +135,10 @@ async def send(state: SimState) -> SimState:
     inbound, thread = state["inbound"], state["thread"]
     attachment_ids: list[str] = []
     if state.get("attach_release"):
-        body_in = inbound.get("body_text") or ""
+        ctx = _claim_context(inbound, thread)
         pdf = build_release_pdf(
-            business_name=_extract(body_in, r"pour le compte de ([^(\n,]+)", "l'assuré"),
-            signer="le représentant légal", amount=20750.0,
-            loss_date="17/10/2026", ref=thread["insurer_reference"],
-            policy_number=_extract(body_in, r"contrat n°\s*([A-Z0-9\-/]+)", "non communiqué"),
+            business_name=ctx["business_name"] or "l'assuré", signer="le représentant légal", amount=20750.0,
+            loss_date="17/10/2026", ref=thread["insurer_reference"], policy_number=ctx["policy_number"],
         )
         async with db.pool.connection() as conn:
             row = await (

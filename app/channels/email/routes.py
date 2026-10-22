@@ -128,7 +128,10 @@ async def agentmail_webhook(request: Request):
 
     provider_ref = message.get("message_id")
     async with db.pool.connection() as conn:
-        dup = await (await conn.execute("SELECT 1 FROM communications WHERE channel = 'email' AND provider_ref = %s", (provider_ref,))).fetchone()
+        dup = await (await conn.execute(
+            "SELECT 1 FROM communications WHERE channel = 'email' AND direction = 'inbound' AND mailbox_id = %s AND provider_ref = %s",
+            (mailbox["id"], provider_ref),
+        )).fetchone()
     if dup:
         return {"received": True, "ignored": "duplicate"}
 

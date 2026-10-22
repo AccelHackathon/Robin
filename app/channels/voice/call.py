@@ -11,6 +11,7 @@ import logging
 from app import db
 from app.agents.audit import record_action
 from app.channels.voice import elevenlabs
+from app.channels.voice.results import watch_call
 from app.config import settings
 
 log = logging.getLogger(__name__)
@@ -91,4 +92,5 @@ async def start_call(*, account_id: str, claim_id: str, to_number: str, goal: st
     await record_action("claims", "start_call", {"claim_id": claim_id, "to": to_number, "goal": goal, "questions": questions},
                         {"call_id": str(call_id), "conversation_id": conversation_id, "twilio_call_sid": twilio_sid},
                         claim_id=claim_id, account_id=account_id)
+    watch_call(str(call_id))  # safety net: finalize even if the post-call webhook never arrives
     return str(call_id)

@@ -15,6 +15,7 @@ async def health():
         "commit": settings.git_commit,
         "integrations": {
             "anthropic": bool(settings.anthropic_api_key),
+            "openai": bool(settings.openai_api_key),
             "telegram": bool(settings.telegram_bot_token),
             "agentmail": bool(settings.agentmail_api_key),
             "elevenlabs": bool(settings.elevenlabs_api_key),

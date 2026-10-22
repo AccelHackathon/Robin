@@ -1,64 +1,22 @@
-"""Workstream A — ElevenLabs post-call webhook and the browser widget fallback."""
+"""Workstream A — ElevenLabs post-call webhook, browser widget fallback, internal call trigger."""
 
+import html
 import json
 import logging
 
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Header, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from psycopg.rows import dict_row
+from pydantic import BaseModel, Field
 
 from app import db
 from app.channels.voice import elevenlabs
-from app.channels.voice.call import build_dynamic_variables
+from app.channels.voice.call import build_dynamic_variables, start_call
+from app.channels.voice.results import finalize_call, get_call_by_conversation
 from app.config import settings
-from app.worker import enqueue
 
 log = logging.getLogger(__name__)
 router = APIRouter(tags=["voice"])
-
-
-def structured_result_from_payload(data: dict) -> dict:
-    """Normalise the ElevenLabs analysis block into the shape workstream C consumes.
-
-    Per question: {question, answer_verbatim, answer_summary, confidence}; plus reached_human,
-    callback_requested, insurer_reference, summary. Oral answers are provisional by construction:
-    C stores them as insurer_oral / to_confirm.
-    """
-    analysis = data.get("analysis") or {}
-    collected = analysis.get("data_collection_results") or {}
-    transcript = data.get("transcript") or []
-    user_turns = [t.get("message", "") for t in transcript if t.get("role") == "user" and t.get("message")]
-
-    def field(name: str):
-        v = collected.get(name)
-        if isinstance(v, dict):
-            return v.get("value")
-        return v
-
-    answers = []
-    for i in range(1, 6):
-        summary = field(f"answer_{i}")
-        if summary in (None, "", "null"):
-            continue
-        answers.append({
-            "question_index": i,
-            "answer_summary": str(summary),
-            "answer_verbatim": None,   # filled below from the transcript when we can match it
-            "confidence": "medium",
-        })
-    # best-effort verbatim: align the i-th user turn with the i-th answer
-    for ans, verbatim in zip(answers, user_turns):
-        ans["answer_verbatim"] = verbatim
-
-    return {
-        "reached_human": bool(user_turns) and field("reached_human") not in (False, "false", "no"),
-        "callback_requested": field("callback_requested") in (True, "true", "yes"),
-        "insurer_reference": field("insurer_reference") or None,
-        "answers": answers,
-        "summary": analysis.get("transcript_summary"),
-        "call_successful": analysis.get("call_successful"),
-        "raw_data_collection": collected,
-    }
 
 
 @router.post("/webhooks/elevenlabs")
@@ -74,61 +32,15 @@ async def elevenlabs_webhook(request: Request):
     kind = event.get("type")
     data = event.get("data") or {}
     conversation_id = data.get("conversation_id")
-    if not conversation_id:
-        return {"received": True, "ignored": "no conversation_id"}
+    if not conversation_id or kind == "post_call_audio":
+        return {"received": True, "ignored": kind}
 
-    if kind == "post_call_audio":
-        return {"received": True, "ignored": "audio"}
-
-    async with db.pool.connection() as conn:
-        async with conn.cursor(row_factory=dict_row) as cur:
-            await cur.execute("SELECT id, claim_id, account_id FROM calls WHERE provider_ref = %s", (conversation_id,))
-            call = await cur.fetchone()
+    call = await get_call_by_conversation(conversation_id)
     if not call:
         log.warning("post-call webhook for unknown conversation %s", conversation_id)
         return {"received": True, "ignored": "unknown conversation"}
 
-    transcript_text = None
-    structured: dict
-    if kind == "call_initiation_failure":
-        reason = data.get("failure_reason") or "unknown"
-        structured = {"reached_human": False, "reason": reason, "answers": [], "summary": None}
-        status, failure_reason, duration = "failed", reason, 0
-    else:  # post_call_transcription
-        transcript = data.get("transcript") or []
-        transcript_text = "\n".join(f"{t.get('role')}: {t.get('message')}" for t in transcript if t.get("message"))
-        structured = structured_result_from_payload(data)
-        meta = data.get("metadata") or {}
-        duration = meta.get("call_duration_secs")
-        status = "completed" if structured["reached_human"] else "failed"
-        failure_reason = None if structured["reached_human"] else "no_human_answer"
-
-    async with db.pool.connection() as conn:
-        await conn.execute(
-            """
-            UPDATE calls SET status = %s, transcript = %s, result = %s, summary = %s, duration_secs = %s,
-                             failure_reason = %s, ended_at = now(), confidence = 'oral_unconfirmed'
-            WHERE id = %s
-            """,
-            (status, transcript_text, json.dumps(structured), structured.get("summary"), duration, failure_reason, call["id"]),
-        )
-        await conn.execute(
-            "UPDATE communications SET delivery_status = %s, body = coalesce(%s, body) WHERE channel = 'phone' AND provider_ref = %s",
-            (status, transcript_text, conversation_id),
-        )
-        await conn.commit()
-
-    await enqueue(
-        "elevenlabs", "call_ended",
-        {
-            "call_id": str(call["id"]),
-            "transcript": transcript_text,
-            "structured_result": structured,
-            "status": status,
-            "provider_ref": f"elevenlabs:{conversation_id}:{kind}",
-        },
-        account_id=call["account_id"], claim_id=call["claim_id"],
-    )
+    await finalize_call(call, kind=kind, data=data, source="webhook")
     return {"received": True}
 
 
@@ -142,11 +54,54 @@ async def voice_widget(call_id: str):
     if not call:
         raise HTTPException(status_code=404)
     variables = build_dynamic_variables(brief=call["brief"], goal=call["goal"], questions=call["questions"])
+    attr = html.escape(json.dumps(variables), quote=True)
     return f"""<!doctype html><html><head><meta charset="utf-8"><title>Robin — voice session (simulated insurer line)</title>
 <style>body{{font-family:system-ui;margin:3rem;max-width:720px}} .tag{{background:#fde68a;padding:.2rem .5rem;border-radius:.3rem;font-size:.8rem}}</style></head>
 <body><span class="tag">SIMULATED INSURER LINE — browser widget, no telephony</span>
 <h1>Robin is calling the claims department</h1>
-<p><b>Goal:</b> {variables['call_goal']}</p><pre>{variables['questions']}</pre>
-<elevenlabs-convai agent-id="{settings.elevenlabs_agent_id}" dynamic-variables='{json.dumps(variables)}'></elevenlabs-convai>
+<p><b>Goal:</b> {html.escape(variables['call_goal'])}</p><pre>{html.escape(variables['questions'])}</pre>
+<elevenlabs-convai agent-id="{html.escape(settings.elevenlabs_agent_id or '')}" dynamic-variables="{attr}"></elevenlabs-convai>
 <script src="https://unpkg.com/@elevenlabs/convai-widget-embed" async type="text/javascript"></script>
 </body></html>"""
+
+
+# --- internal trigger (operators / rehearsal) --------------------------------------------------
+
+class StartCallRequest(BaseModel):
+    claim_id: str
+    to_number: str | None = None
+    goal: str
+    questions: list[str] = Field(min_length=1, max_length=5)
+    brief: dict = Field(default_factory=dict)
+
+
+@router.post("/internal/calls")
+async def internal_start_call(body: StartCallRequest, authorization: str | None = Header(default=None)):
+    """Start a call for an existing claim. Protected by INTERNAL_API_TOKEN (bearer). Used for rehearsals
+    and by operators; the Claims Agent uses the `start_call` tool directly."""
+    if not settings.internal_api_token or authorization != f"Bearer {settings.internal_api_token}":
+        raise HTTPException(status_code=401)
+    async with db.pool.connection() as conn:
+        async with conn.cursor(row_factory=dict_row) as cur:
+            await cur.execute(
+                """
+                SELECT c.id, c.account_id, c.loss_date, c.summary, b.name AS business_name, b.insurer_name
+                FROM claims c LEFT JOIN businesses b ON b.account_id = c.account_id
+                WHERE c.id = %s
+                """,
+                (body.claim_id,),
+            )
+            claim = await cur.fetchone()
+    if not claim:
+        raise HTTPException(status_code=404, detail="unknown claim")
+    to_number = body.to_number or settings.insurer_test_phone
+    if not to_number:
+        raise HTTPException(status_code=400, detail="no destination number")
+    brief = {
+        "business_name": claim["business_name"], "insurer_name": claim["insurer_name"],
+        "claim_ref": f"RB-{str(claim['id'])[:8]}", "loss_date": str(claim["loss_date"] or ""),
+        "loss_summary": claim["summary"] or "", **body.brief,
+    }
+    call_id = await start_call(account_id=str(claim["account_id"]), claim_id=str(claim["id"]), to_number=to_number,
+                               goal=body.goal, questions=body.questions, brief=brief)
+    return {"call_id": call_id, "widget_url": f"{settings.public_base_url or ''}/voice/widget/{call_id}"}

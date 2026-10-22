@@ -15,6 +15,7 @@ from app.channels.email import routes as email_routes
 from app.channels.telegram import handlers as telegram_handlers  # noqa: F401
 from app.channels.telegram import routes as telegram_routes
 from app.channels.voice import handlers as voice_handlers  # noqa: F401
+from app.channels.voice import results as voice_results
 from app.channels.voice import routes as voice_routes
 from app.config import settings
 from app.routes import health
@@ -32,6 +33,12 @@ async def lifespan(app: FastAPI):
         applied = await db.run_migrations()
         log.info("migrations applied: %s", applied or "none")
         await email_mailboxes.bootstrap()  # workstream A: simulated insurer inbox (idempotent)
+        try:
+            stale = await voice_results.reconcile_stale_calls()
+            if stale:
+                log.info("reconciled %d stale calls from a previous process", stale)
+        except Exception:
+            log.exception("stale call reconciliation failed")
         await claims_graph.setup()         # workstream C: Postgres checkpointer + compiled Claims Agent graph
         if settings.worker_enabled:
             worker_task = asyncio.create_task(worker.run_forever(stop))

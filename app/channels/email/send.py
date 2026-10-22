@@ -94,8 +94,11 @@ async def send_email(
     for attempt in range(3):
         try:
             client = agentmail()
-            kwargs = dict(to=[to], text=body, html=_text_to_html(body), attachments=attachments or None,
-                          labels=[f"claim:{str(claim_id)[:8]}"] if claim_id else None, idempotency_key=str(comm_id))
+            kwargs = dict(to=[to], text=body, html=_text_to_html(body), idempotency_key=str(comm_id))
+            if attachments:
+                kwargs["attachments"] = attachments
+            if claim_id:
+                kwargs["labels"] = [f"claim:{str(claim_id)[:8]}"]
             if in_reply_to:
                 response = await client.inboxes.messages.reply(mailbox["address"], in_reply_to, **kwargs)
             else:

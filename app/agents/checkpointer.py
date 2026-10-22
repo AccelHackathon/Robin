@@ -4,7 +4,7 @@ Usage:
     saver = await get_checkpointer()
     graph = builder.compile(checkpointer=saver)
 
-One dedicated autocommit connection (the checkpointer requires it); tables are created on first
+A small dedicated autocommit pool (the checkpointer requires autocommit + dict rows); tables are created on first
 use. Workstreams A and C both compile their graphs against this saver; thread ids are namespaced
 by the caller (e.g. "claim:<uuid>", "insurer_sim:<thread_ref>").
 """
@@ -12,9 +12,9 @@ by the caller (e.g. "claim:<uuid>", "insurer_sim:<thread_ref>").
 import asyncio
 import logging
 
-import psycopg
 from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
 from psycopg.rows import dict_row
+from psycopg_pool import AsyncConnectionPool
 
 from app.config import settings
 
@@ -32,10 +32,10 @@ async def get_checkpointer() -> AsyncPostgresSaver:
         if _saver is None:
             if not settings.database_url:
                 raise RuntimeError("DATABASE_URL is not set")
-            conn = await psycopg.AsyncConnection.connect(
-                settings.database_url, autocommit=True, prepare_threshold=0, row_factory=dict_row
-            )
-            saver = AsyncPostgresSaver(conn)
+            pool = AsyncConnectionPool(settings.database_url, min_size=1, max_size=2, open=False,
+                                       kwargs={"autocommit": True, "prepare_threshold": 0, "row_factory": dict_row})
+            await pool.open()
+            saver = AsyncPostgresSaver(pool)
             await saver.setup()
             _saver = saver
             log.info("langgraph checkpointer ready")
