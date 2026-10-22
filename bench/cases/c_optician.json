@@ -1,0 +1,195 @@
+{
+  "id": "C",
+  "name": "Optique Pauline — stock looted, Marseille",
+  "contract": {
+    "product_name": "Generali_100Pro_CG_GA5M70F",
+    "insurer_name": "Generali",
+    "label": "Generali 100% Pro (GA5M70F, 01/2022)"
+  },
+  "loss_date": "2026-10-17",
+  "loss_type": "riot_damage",
+  "closure_days": 42,
+  "vat_recoverable": true,
+  "narrative": "The shop was looted for three hours on Saturday 17 October in the afternoon while I was inside. About 90% of the frames and sunglasses are gone — I estimate 120 000 € at retail price. Displays and the window are destroyed. 30 customer glasses ready for collection were taken. The computer, software and till are gone. I will be closed about 6 weeks waiting for suppliers. I had to order express restock and lend equipment.",
+  "coverage": [
+    {
+      "guarantee": "riot_civil_commotion",
+      "subscribed": "yes",
+      "page": 11
+    },
+    {
+      "guarantee": "theft_vandalism",
+      "subscribed": "yes",
+      "ceiling": {
+        "amount": 20000,
+        "unit": "EUR"
+      },
+      "page": 17
+    },
+    {
+      "guarantee": "glass",
+      "subscribed": "yes",
+      "page": 20
+    },
+    {
+      "guarantee": "business_interruption",
+      "subscribed": "yes",
+      "page": 28
+    },
+    {
+      "guarantee": "bailed_goods",
+      "subscribed": "yes",
+      "page": 17
+    },
+    {
+      "guarantee": "tenant_fit_out",
+      "subscribed": "yes",
+      "page": 12
+    },
+    {
+      "guarantee": "guarding_boarding",
+      "subscribed": "yes",
+      "ceiling": {
+        "amount": 14000,
+        "unit": "EUR"
+      },
+      "page": 12
+    },
+    {
+      "guarantee": "indirect_losses",
+      "subscribed": "yes",
+      "page": 31
+    },
+    {
+      "guarantee": "assessor_fees",
+      "subscribed": "yes",
+      "page": 51
+    }
+  ],
+  "evidence": [
+    {
+      "type": "invoice",
+      "vendor": "Optic Supply",
+      "description": "total HT — montures optiques",
+      "amount_eur": 54000,
+      "date": "2026-07-15",
+      "document": "inv_frames.pdf"
+    },
+    {
+      "type": "invoice",
+      "vendor": "SunBrands",
+      "description": "total HT — solaires de marque",
+      "amount_eur": 15000,
+      "date": "2026-06-02",
+      "document": "inv_sun.pdf"
+    },
+    {
+      "type": "inventory",
+      "vendor": null,
+      "description": "équipements clients prêts à livrer — 30 × 300 €",
+      "amount_eur": 9000,
+      "date": "2026-10-17",
+      "document": "customer_orders.pdf"
+    },
+    {
+      "type": "quote",
+      "vendor": "Agence Déco",
+      "description": "devis présentoirs et agencement — total HT",
+      "amount_eur": 15000,
+      "date": "2026-10-20",
+      "document": "quote_fitout.pdf"
+    },
+    {
+      "type": "quote",
+      "vendor": "Vitrerie Sud",
+      "description": "devis vitrine et rideau — total HT",
+      "amount_eur": 7100,
+      "date": "2026-10-20",
+      "document": "quote_glass.pdf"
+    },
+    {
+      "type": "invoice",
+      "vendor": "InfoOptic",
+      "description": "total HT — ordinateur, logiciel, caisse",
+      "amount_eur": 3000,
+      "date": "2025-11-20",
+      "document": "inv_it.pdf"
+    },
+    {
+      "type": "accounting",
+      "vendor": null,
+      "description": "CA mensuel 25 000 € ; marge brute 60 %",
+      "amount_eur": 25000,
+      "date": "2026-10-22",
+      "document": "accountant_export.pdf"
+    },
+    {
+      "type": "invoice",
+      "vendor": "Optic Supply",
+      "description": "total HT — réassort express et prêt de matériel",
+      "amount_eur": 2500,
+      "date": "2026-11-02",
+      "document": "inv_extra.pdf"
+    }
+  ],
+  "naive_declared_eur": 135100,
+  "naive_note": "declared at retail price — exposure to forfeiture for false declaration",
+  "ground_truth": [
+    {
+      "catalog_key": "stock",
+      "label": "Frames and sunglasses",
+      "amount_eur": 69000,
+      "page": 50,
+      "basis": "valeur d'achat au dernier cours; NOT 120 000 € retail"
+    },
+    {
+      "catalog_key": "bailed_goods",
+      "label": "Customer glasses ready for collection",
+      "amount_eur": 9000,
+      "page": 17,
+      "basis": "biens confiés"
+    },
+    {
+      "catalog_key": "tenant_fit_out",
+      "label": "Displays and fit-out",
+      "amount_eur": 15000,
+      "page": 12,
+      "basis": "agencements, frais réels"
+    },
+    {
+      "catalog_key": "shopfront_glass",
+      "label": "Window and shutter",
+      "amount_eur": 7100,
+      "page": 20,
+      "basis": "bris de glaces"
+    },
+    {
+      "catalog_key": "equipment",
+      "label": "Computer, software, till",
+      "amount_eur": 3000,
+      "page": 48,
+      "basis": "valeur à neuf option"
+    },
+    {
+      "catalog_key": "business_interruption",
+      "label": "Business interruption (6 weeks × 25 000 € × 60 %)",
+      "amount_eur": 21600,
+      "page": 28,
+      "basis": "no day deductible when the triggering event is vandalism (p. 28)"
+    },
+    {
+      "catalog_key": "extra_operating_costs",
+      "label": "Express restock, equipment loan",
+      "amount_eur": 2500,
+      "page": 28,
+      "basis": "frais supplémentaires d'exploitation, prior consent"
+    }
+  ],
+  "insurer_first_offer_eur": 25000,
+  "naive_items": [
+    "stock",
+    "tenant_fit_out",
+    "shopfront_glass",
+    "equipment"
+  ]
+}

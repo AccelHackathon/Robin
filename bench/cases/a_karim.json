@@ -1,0 +1,264 @@
+{
+  "id": "A",
+  "name": "Karim — phone repair and resale, Marseille city centre",
+  "contract": {
+    "product_name": "MAAF_MRP_CG_11031-0126",
+    "insurer_name": "MAAF",
+    "label": "MAAF Multirisque Professionnelle 11031 (01/2026)"
+  },
+  "loss_date": "2026-10-17",
+  "loss_type": "riot_damage",
+  "closure_days": 28,
+  "vat_recoverable": true,
+  "narrative": "My shop was looted Saturday night, 17 October, around 7pm. The metal shutter was forced and the window broken. The stock and the workshop were emptied in about 20 minutes: around 180 smartphones in stock, spare parts and accessories, and 25 customer phones that were in for repair. The micro-soldering station, microscope, till and card terminal are gone. The shop will stay closed about 4 weeks. I paid a security guard and boards for 72 hours and had the place cleaned.",
+  "coverage": [
+    {
+      "guarantee": "riot_civil_commotion",
+      "subscribed": "yes",
+      "page": 15
+    },
+    {
+      "guarantee": "theft_vandalism",
+      "subscribed": "yes",
+      "ceiling": {
+        "amount": 15000,
+        "unit": "EUR"
+      },
+      "page": 19
+    },
+    {
+      "guarantee": "glass",
+      "subscribed": "yes",
+      "page": 14
+    },
+    {
+      "guarantee": "business_interruption",
+      "subscribed": "yes",
+      "deductible": {
+        "amount": 3,
+        "unit": "days"
+      },
+      "page": 41
+    },
+    {
+      "guarantee": "bailed_goods",
+      "subscribed": "yes",
+      "page": 22
+    },
+    {
+      "guarantee": "guarding_boarding",
+      "subscribed": "yes",
+      "ceiling": {
+        "amount": 6600,
+        "unit": "EUR"
+      },
+      "page": 14
+    },
+    {
+      "guarantee": "debris",
+      "subscribed": "yes",
+      "page": 24
+    },
+    {
+      "guarantee": "equipment_replacement_value",
+      "subscribed": "yes",
+      "page": 79
+    },
+    {
+      "guarantee": "indirect_losses",
+      "subscribed": "yes",
+      "page": 25
+    },
+    {
+      "guarantee": "locks",
+      "subscribed": "yes",
+      "ceiling": {
+        "amount": 3000,
+        "unit": "EUR"
+      },
+      "page": 19
+    },
+    {
+      "guarantee": "tenant_fit_out",
+      "subscribed": "unknown",
+      "page": null
+    }
+  ],
+  "evidence": [
+    {
+      "type": "invoice",
+      "vendor": "TechDistrib SAS",
+      "description": "total HT — smartphones reconditionnés",
+      "amount_eur": 33000,
+      "date": "2026-09-30",
+      "document": "inv_techdistrib_sept.pdf"
+    },
+    {
+      "type": "invoice",
+      "vendor": "TechDistrib SAS",
+      "description": "total HT — smartphones reconditionnés",
+      "amount_eur": 6600,
+      "date": "2026-10-10",
+      "document": "inv_techdistrib_oct.pdf"
+    },
+    {
+      "type": "invoice",
+      "vendor": "PhoneParts",
+      "description": "total HT — pièces détachées et accessoires",
+      "amount_eur": 6000,
+      "date": "2026-10-05",
+      "document": "inv_phoneparts.pdf"
+    },
+    {
+      "type": "inventory",
+      "vendor": null,
+      "description": "liste appareils clients en réparation — 25 appareils, valeur 7 500 €",
+      "amount_eur": 7500,
+      "date": "2026-10-17",
+      "document": "repairs_list.pdf"
+    },
+    {
+      "type": "quote",
+      "vendor": "Miroiterie du Port",
+      "description": "devis vitrine verre feuilleté 12 m² — total HT",
+      "amount_eur": 3600,
+      "date": "2026-10-19",
+      "document": "quote_glass.pdf"
+    },
+    {
+      "type": "quote",
+      "vendor": "Fermetures Sud",
+      "description": "devis rideau métallique motorisé — total HT",
+      "amount_eur": 3500,
+      "date": "2026-10-19",
+      "document": "quote_shutter.pdf"
+    },
+    {
+      "type": "invoice",
+      "vendor": "MicroTech",
+      "description": "total HT — station micro-soudure, microscope, caisse NF525, TPE",
+      "amount_eur": 4500,
+      "date": "2026-03-12",
+      "document": "inv_workshop.pdf"
+    },
+    {
+      "type": "invoice",
+      "vendor": "Agenceur Pro",
+      "description": "total HT — agencement et mobilier boutique",
+      "amount_eur": 8000,
+      "date": "2025-06-01",
+      "document": "inv_fitout.pdf"
+    },
+    {
+      "type": "invoice",
+      "vendor": "SecuriGarde",
+      "description": "total HT — gardiennage et pose de panneaux 72 h",
+      "amount_eur": 1200,
+      "date": "2026-10-20",
+      "document": "inv_guard.pdf"
+    },
+    {
+      "type": "invoice",
+      "vendor": "NetPro",
+      "description": "total HT — nettoyage et déblais",
+      "amount_eur": 800,
+      "date": "2026-10-21",
+      "document": "inv_cleaning.pdf"
+    },
+    {
+      "type": "accounting",
+      "vendor": null,
+      "description": "CA mensuel N-1 30 000 € ; taux de marge brute 45 %",
+      "amount_eur": 30000,
+      "date": "2026-10-22",
+      "document": "accountant_export.pdf"
+    }
+  ],
+  "naive_declared_eur": 38100,
+  "ground_truth": [
+    {
+      "catalog_key": "stock",
+      "label": "Smartphones in stock",
+      "amount_eur": 39600,
+      "page": 79,
+      "basis": "purchase price at the day's rate (MAAF p. 79); theft cap 15 000 € p. 19 — split riot vs theft to be argued"
+    },
+    {
+      "catalog_key": "spare_parts",
+      "label": "Spare parts and accessories",
+      "amount_eur": 6000,
+      "page": 79,
+      "basis": "purchase price"
+    },
+    {
+      "catalog_key": "bailed_goods",
+      "label": "Customer devices in repair",
+      "amount_eur": 7500,
+      "page": 22,
+      "basis": "biens confiés under the theft/vandalism option"
+    },
+    {
+      "catalog_key": "shopfront_glass",
+      "label": "Shop window (laminated glass)",
+      "amount_eur": 3600,
+      "page": 14,
+      "basis": "bris de glace"
+    },
+    {
+      "catalog_key": "shutter",
+      "label": "Motorised metal shutter",
+      "amount_eur": 3500,
+      "page": 14,
+      "basis": "protection devices incl. rideaux métalliques within bris de glace"
+    },
+    {
+      "catalog_key": "equipment",
+      "label": "Workshop equipment (station, microscope, till, terminal)",
+      "amount_eur": 4500,
+      "page": 79,
+      "basis": "IT < 2 years at replacement value; depreciation buy-back 33 %"
+    },
+    {
+      "catalog_key": "tenant_fit_out",
+      "label": "Shop fit-out and furniture",
+      "amount_eur": 8000,
+      "page": null,
+      "basis": "absent from MAAF general conditions — to check on the schedule; otherwise State recourse"
+    },
+    {
+      "catalog_key": "guarding_boarding",
+      "label": "Security guard and boarding 72 h",
+      "amount_eur": 1200,
+      "page": 14,
+      "basis": "clôture et gardiennage, cap 6 600 €"
+    },
+    {
+      "catalog_key": "debris_cleaning",
+      "label": "Cleaning and debris removal",
+      "amount_eur": 800,
+      "page": 24,
+      "basis": "démolition et déblais"
+    },
+    {
+      "catalog_key": "business_interruption",
+      "label": "Business interruption (4 weeks × 30 000 €/month × 45 %)",
+      "amount_eur": 13500,
+      "page": 41,
+      "basis": "loss of gross margin; 3-day deductible"
+    },
+    {
+      "catalog_key": "extra_operating_costs",
+      "label": "Extra operating costs",
+      "amount_eur": 1500,
+      "page": 41,
+      "basis": "frais supplémentaires d'exploitation"
+    }
+  ],
+  "insurer_first_offer_eur": 20750,
+  "naive_items": [
+    "stock",
+    "shopfront_glass",
+    "shutter",
+    "equipment"
+  ]
+}

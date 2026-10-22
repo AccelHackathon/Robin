@@ -1,0 +1,192 @@
+{
+  "id": "B",
+  "name": "Boulangerie Martin — window blown in and fire start, Paris 10e",
+  "contract": {
+    "product_name": "AXA_AtoutsPME_CG",
+    "insurer_name": "AXA",
+    "label": "AXA Atouts PME (réf. 975637 I)"
+  },
+  "loss_date": "2026-10-17",
+  "loss_type": "fire",
+  "closure_days": 21,
+  "vat_recoverable": true,
+  "narrative": "During the night of 17 to 18 October a burning object came through the shop window and a fire started in the sales area, with smoke into the bakehouse. The window and the glass door are destroyed, the refrigerated pastry display is ruined, the sign, paint, false ceiling and lighting are damaged. The oven and proofing cabinet need checking and the bakehouse needs soot decontamination. Raw materials and the day's production are lost. We boarded up and paid a guard. We are closed for 3 weeks and the 4 employees are on short-time work. A neighbouring bakery sells our bread meanwhile and we put up signage.",
+  "coverage": [
+    {
+      "guarantee": "fire",
+      "subscribed": "yes",
+      "page": 6
+    },
+    {
+      "guarantee": "riot_civil_commotion",
+      "subscribed": "yes",
+      "page": 6
+    },
+    {
+      "guarantee": "glass",
+      "subscribed": "yes",
+      "page": 20
+    },
+    {
+      "guarantee": "business_interruption",
+      "subscribed": "yes",
+      "deductible": {
+        "amount": 3,
+        "unit": "days"
+      },
+      "page": 27
+    },
+    {
+      "guarantee": "tenant_fit_out",
+      "subscribed": "yes",
+      "page": 35
+    },
+    {
+      "guarantee": "guarding_boarding",
+      "subscribed": "yes",
+      "page": 38
+    },
+    {
+      "guarantee": "debris",
+      "subscribed": "yes",
+      "page": 37
+    },
+    {
+      "guarantee": "equipment_replacement_value",
+      "subscribed": "yes",
+      "page": 56
+    }
+  ],
+  "evidence": [
+    {
+      "type": "quote",
+      "vendor": "Vitrerie Magenta",
+      "description": "devis vitrine 8 m² et porte vitrée — total HT",
+      "amount_eur": 3900,
+      "date": "2026-10-20",
+      "document": "quote_glass.pdf"
+    },
+    {
+      "type": "invoice",
+      "vendor": "FroidPro",
+      "description": "total HT — vitrine réfrigérée pâtisserie 2 m",
+      "amount_eur": 8000,
+      "date": "2024-02-10",
+      "document": "inv_display.pdf"
+    },
+    {
+      "type": "quote",
+      "vendor": "Agencement Boulange",
+      "description": "devis enseigne, peinture, faux plafond, éclairage — total HT",
+      "amount_eur": 12000,
+      "date": "2026-10-21",
+      "document": "quote_fitout.pdf"
+    },
+    {
+      "type": "quote",
+      "vendor": "DécontamPro",
+      "description": "devis décontamination suies laboratoire, contrôle four et chambre de pousse — total HT",
+      "amount_eur": 5000,
+      "date": "2026-10-21",
+      "document": "quote_decontam.pdf"
+    },
+    {
+      "type": "inventory",
+      "vendor": null,
+      "description": "matières premières et production perdues au coût",
+      "amount_eur": 2500,
+      "date": "2026-10-18",
+      "document": "stock_loss.pdf"
+    },
+    {
+      "type": "invoice",
+      "vendor": "GardeNuit",
+      "description": "total HT — contreplaqué et gardiennage",
+      "amount_eur": 900,
+      "date": "2026-10-19",
+      "document": "inv_guard.pdf"
+    },
+    {
+      "type": "accounting",
+      "vendor": null,
+      "description": "CA mensuel N-1 45 000 € ; marge brute 70 % ; aide fonds de soutien 5 000 €",
+      "amount_eur": 45000,
+      "date": "2026-10-22",
+      "document": "accountant_export.pdf"
+    },
+    {
+      "type": "invoice",
+      "vendor": "Boulangerie Voisine",
+      "description": "total HT — dépôt de pain et signalétique",
+      "amount_eur": 2000,
+      "date": "2026-11-05",
+      "document": "inv_extra.pdf"
+    }
+  ],
+  "naive_declared_eur": 20900,
+  "ground_truth": [
+    {
+      "catalog_key": "shopfront_glass",
+      "label": "Window and glass door",
+      "amount_eur": 3900,
+      "page": 20,
+      "basis": "bris de glaces, replacement value without depreciation (p. 56)"
+    },
+    {
+      "catalog_key": "equipment",
+      "label": "Refrigerated pastry display",
+      "amount_eur": 8000,
+      "page": 56,
+      "basis": "equipment < 5 years at replacement value"
+    },
+    {
+      "catalog_key": "tenant_fit_out",
+      "label": "Sign, paint, false ceiling, lighting",
+      "amount_eur": 12000,
+      "page": 35,
+      "basis": "embellissements"
+    },
+    {
+      "catalog_key": "debris_cleaning",
+      "label": "Soot decontamination, oven and proofing cabinet checks",
+      "amount_eur": 5000,
+      "page": 37,
+      "basis": "nettoyage et déblais after fire"
+    },
+    {
+      "catalog_key": "stock",
+      "label": "Raw materials and production lost",
+      "amount_eur": 2500,
+      "page": 57,
+      "basis": "marchandises au cours d'achat"
+    },
+    {
+      "catalog_key": "guarding_boarding",
+      "label": "Boarding and guard",
+      "amount_eur": 900,
+      "page": 38,
+      "basis": "frais de gardiennage, 15 days max"
+    },
+    {
+      "catalog_key": "business_interruption",
+      "label": "Business interruption (3 weeks × 45 000 € × 70 %)",
+      "amount_eur": 23600,
+      "page": 27,
+      "basis": "perte de marge brute; 3 business days deductible p. 30; short-time work deductible, support fund not (TAE Marseille 29/01/2026)"
+    },
+    {
+      "catalog_key": "extra_operating_costs",
+      "label": "Bread sold via neighbour, signage",
+      "amount_eur": 2000,
+      "page": 31,
+      "basis": "frais supplémentaires d'exploitation"
+    }
+  ],
+  "insurer_first_offer_eur": null,
+  "naive_items": [
+    "shopfront_glass",
+    "equipment",
+    "stock",
+    "business_interruption"
+  ]
+}
