@@ -87,6 +87,13 @@ async def _structure_narrative(state: dict[str, Any], text: str, out: dict[str, 
                     (claim_id, n["loss_date"], n["loss_date"]),
                 )
             await conn.commit()
+        if n.get("loss_date") and not claim.get("loss_date"):
+            try:
+                from app.deadlines.instantiate import instantiate_for_claim
+
+                out["deadlines_created"] = await instantiate_for_claim(claim_id)
+            except Exception:
+                pass
     if n.get("neutral_description"):
         f = await T.log_fact(claim_id, f"Event (neutral restatement): {n['neutral_description']}", "agent_inference", "medium", status="to_confirm")
         out["new_fact_ids"].append(f.fact_id)
