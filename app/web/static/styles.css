@@ -24,3 +24,5 @@ header nav{background:rgba(16,79,151,.72);border:1px solid #ffffff30;border-radi
 @media(max-width:560px){.coverage-row .coverage-state{float:none;display:table;margin-top:6px}nav{padding:8px 12px}nav .nav-button{font-size:12px}}
 
 .coverage-row summary{cursor:pointer;list-style-position:outside;margin-left:15px}.coverage-row[open] summary{margin-bottom:10px}.coverage-row summary:focus-visible{outline:2px solid #2375c7;outline-offset:4px}
+
+.policy-details>summary{cursor:pointer;line-height:1.5}.policy-details[open]>summary{margin-bottom:16px}
