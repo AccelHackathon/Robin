@@ -10,6 +10,7 @@ class Settings(BaseSettings):
 
     openai_api_key: str | None = None                    # the only LLM provider used by the project
     openai_model: str = "gpt-4o"
+    openai_base_url: str | None = None                   # OpenAI-compatible endpoint (e.g. local Ollama http://localhost:11434/v1)
     telegram_bot_token: str | None = None
 
     # Workstream A — email (AgentMail)
