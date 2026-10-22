@@ -22,7 +22,7 @@ from app.llm import chat_model, llm_available
 log = logging.getLogger(__name__)
 
 def provider() -> str | None:
-    return "openai" if llm_available() else None
+    return ("openai" if settings.openai_api_key else "openai_compatible") if llm_available() else None
 
 
 def get_model(*, temperature: float = 0.0):
@@ -168,4 +168,7 @@ async def extract_narrative(text: str, *, claim_id: str | None, today: str, cata
     if provider() is None or not text.strip():
         return None
     system = NARRATIVE_SYSTEM.replace("{today}", today).replace("{catalog_keys}", ", ".join(catalog_keys) or "stock, equipment, glass, other")
-    return await complete_json(system, [{"type": "text", "text": text}], claim_id=claim_id, tool="extract_narrative")
+    import hashlib
+
+    key = hashlib.sha256((system + "\n" + text).encode()).hexdigest()  # same narrative, same day → same structure; cached
+    return await complete_json(system, [{"type": "text", "text": text}], claim_id=claim_id, tool="extract_narrative", cache_key=key)

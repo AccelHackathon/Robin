@@ -37,6 +37,7 @@ from app.agents.claims.brain import covers, recompute
 from app.agents.review import amounts as A
 from app.agents.review.citations import quote_in_body
 from app.config import settings
+from app.llm import llm_available, model_name
 
 CASES = Path(__file__).parent / "cases"
 REPORT = Path(__file__).parent / "report.md"
@@ -108,8 +109,8 @@ You have no access to the policy text or to invoices; do your best from the desc
 
 
 async def run_llm_only(case: dict[str, Any], doc: dict[str, Any], catalog_keys: list[str]) -> dict[str, Any]:
-    if not settings.openai_api_key:
-        return {"variant": "llm_only", "note": "not run — OPENAI_API_KEY missing"}
+    if not llm_available():
+        return {"variant": "llm_only", "note": "not run — no model configured"}
     from app.agents.claims.nodes import llm
 
     started = time.perf_counter()
@@ -130,7 +131,7 @@ async def run_llm_only(case: dict[str, Any], doc: dict[str, Any], catalog_keys: 
     return {"variant": "llm_only", "eur_identified": round(sum(amounts)), "recall": f"{r}/{n}", "recall_pct": round(100 * r / n),
             "citations_correct": f"{ok}/{len(cited)}", "citations_pct": (round(100 * ok / len(cited)) if cited else None),
             "untraceable_amounts": len(_untraceable(amounts, case)), "tokens": (tok[0] or 0) + (tok[1] or 0) if tok else None, "latency_ms": latency,
-            "note": f"{len(items)} items; pages cited without the text: {len(cited)}", "items": items}
+            "note": f"{model_name()}: {len(items)} items; pages cited without the text: {len(cited)}", "items": items}
 
 
 async def run_agent(case: dict[str, Any], doc: dict[str, Any], *, coverage: list[dict[str, Any]] | None = None, evidence: list[dict[str, Any]] | None = None,
@@ -160,7 +161,7 @@ async def run_agent(case: dict[str, Any], doc: dict[str, Any], *, coverage: list
     from app.agents.claims.brain import evidence_items
     from app.agents.claims.nodes import analyze as AN
 
-    with_model = bool(settings.openai_api_key)
+    with_model = llm_available()
     if with_model:
         state = {"claim_id": claim_id, "event": {"kind": "message", "payload": {"text": case["narrative"]}}, "memory": await M.get_claim_memory(claim_id), "triage": {}}
         await AN.run(state)
@@ -213,7 +214,7 @@ async def run_agent(case: dict[str, Any], doc: dict[str, Any], *, coverage: list
     async with db.pool.connection() as conn:
         tok = await (await conn.execute("SELECT coalesce(sum(tokens_in),0) + coalesce(sum(tokens_out),0) FROM actions WHERE claim_id = %s", (claim_id,))).fetchone()
     supported = sum(1 for li in items if li.get("status") in ("supported", "sent"))
-    mode = "model + deterministic pipeline" if with_model else "deterministic pipeline only (no model key: narrative not structured)"
+    mode = f"model ({model_name()}) + deterministic pipeline" if with_model else "deterministic pipeline only (no model configured: narrative not structured)"
     from bench.metrics import item_metrics, eur_summary
     im = item_metrics([{"catalog_key": li.get("catalog_key"), "amount_eur": li.get("amount_claimed_eur")} for li in items], case["ground_truth"])
     return {"variant": tag, "claim_id": claim_id, "duplicates_detected": dup_count, "item_metrics": im,
