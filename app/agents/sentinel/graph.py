@@ -426,9 +426,18 @@ async def persist(state: SentinelState) -> SentinelState:
                 (state["account_id"],),
             )
         await conn.commit()
+    # Claims already open for this account: attach alerts whose window covers the loss date (evidence of the external event).
+    linked = 0
+    if created:
+        async with db.pool.connection() as conn:
+            claims = await (await conn.execute(
+                "SELECT id, coalesce(loss_date::timestamptz, created_at) FROM claims WHERE account_id = %s AND status NOT IN ('closed')", (state["account_id"],)
+            )).fetchall()
+        for claim_id, loss_date in claims:
+            linked += await link_alerts_to_claim(str(claim_id), state["account_id"], loss_date)
     await record_action("sentinel", "sweep", {"sweep_id": state["sweep_id"], **state.get("stats", {})},
-                        {"alerts_created": created, "notified": state.get("notified", 0)}, account_id=state["account_id"])
-    return {"stats": {**state.get("stats", {}), "alerts_created": created}}
+                        {"alerts_created": created, "notified": state.get("notified", 0), "linked_to_claims": linked}, account_id=state["account_id"])
+    return {"stats": {**state.get("stats", {}), "alerts_created": created, "linked_to_claims": linked}}
 
 
 def build_graph():
