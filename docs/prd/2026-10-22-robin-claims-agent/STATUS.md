@@ -1,56 +1,56 @@
 # STATUS — Robin claims agent
 
-PRD : `PRD.md` (même dossier). Mis à jour : 2026-10-22.
+PRD: `PRD.md` (same folder). Updated: 2026-10-22.
 
-## Phase courante
+## Current phase
 
-- [ ] H0 — démo hackathon (pitch 16 h, résultats 17 h)
-- [ ] H1 — premiers utilisateurs réels
-- [ ] H2 — lancement
+- [ ] H0 — hackathon demo (pitch 4 pm, results 5 pm)
+- [ ] H1 — first real users
+- [ ] H2 — launch
 
-## Bloqueurs
+## Blockers
 
-| # | Bloqueur | Impact | Owner | État |
+| # | Blocker | Impact | Owner | State |
 |---|---|---|---|---|
-| B1 | Rôle admin organisation Aiven pour lien GitHub → Runtime | Déploiement H0 | ? | **Ouvert** |
-| B2 | Crédits ElevenLabs + numéro Twilio vérifié | Étape 8 (dégradable) | ? | Ouvert |
-| B3 | Contrats B/C du benchmark non affectés | Étape 5 | ? | Ouvert |
+| B1 | Aiven organisation admin role for GitHub → Runtime link | H0 deployment | ? | **Open** |
+| B2 | ElevenLabs credits + verified Twilio number | Step 8 (degradable) | ? | Open |
+| B3 | Benchmark contracts B/C not assigned | Step 5 | ? | Open |
 
-## Tâches H0
+## H0 tasks
 
-| # | Tâche | Dépend de | Débloque | État |
+| # | Task | Depends on | Unblocks | State |
 |---|---|---|---|---|
-| 1 | Squelette FastAPI + Dockerfile + Runtime + PG + migration test | — | tout | Ready |
-| 2 | Ingestion 12 CG + Intake (MAAF + CP Karim) → profil, leviers, deadlines | 1 | 3, 5 | Blocked by 1 |
-| 3 | Claims Agent minimal + **review node (8 contrôles)** | 1 | 4, 5, 6 | Blocked by 1 |
-| 4 | Telegram : deep link, médias, ask_client, interrupt/resume, dédoublonnage, test reprise | 3 | 7 | Blocked by 3 |
-| 5 | `bench/` 3 cas × 3 variantes | 2, 3 | slide | Blocked by 2, 3 |
-| 6 | AgentMail + Insurer Simulator (avec quittance) | 3 | 7 | Blocked by 3 |
-| 7 | Site onboarding réduit + mandat + 3 consentements | 2 | démo | Blocked by 2 |
-| 8 | ElevenLabs appel + post-call + provenance orale | 6 | démo | Blocked by 6 (dégradable → widget) |
-| 9 | Vocaux Telegram, reprise démontrée, pitch | 4, 6 | — | Blocked |
+| 1 | FastAPI skeleton + Dockerfile + Runtime + PG + test migration | — | everything | Ready |
+| 2 | Ingestion of 12 CG + Intake (MAAF + Karim CP) → profile, levers, deadlines | 1 | 3, 5 | Blocked by 1 |
+| 3 | Minimal Claims Agent + **review node (8 checks)** | 1 | 4, 5, 6 | Blocked by 1 |
+| 4 | Telegram: deep link, media, ask_client, interrupt/resume, deduplication, resume test | 3 | 7 | Blocked by 3 |
+| 5 | `bench/` 3 cases × 3 variants | 2, 3 | slide | Blocked by 2, 3 |
+| 6 | AgentMail + Insurer Simulator (with release) | 3 | 7 | Blocked by 3 |
+| 7 | Reduced onboarding site + mandate + 3 consents | 2 | demo | Blocked by 2 |
+| 8 | ElevenLabs call + post-call + oral provenance | 6 | demo | Blocked by 6 (degradable → widget) |
+| 9 | Telegram voice notes, resume demonstrated, pitch | 4, 6 | — | Blocked |
 
-Parallélisme : 2 ‖ 3 · 4 ‖ 6 · 7 ‖ 8. **1–5 non négociables.**
+Parallelism: 2 ‖ 3 · 4 ‖ 6 · 7 ‖ 8. **1–5 non-negotiable.**
 
-## Critères d'acceptation à cocher avant le pitch
+## Acceptance criteria to tick before the pitch
 
-- [ ] AC-1 profil de garanties MAAF avec pages
-- [ ] AC-3 déclaration J0 avant toute demande de pièce
-- [ ] AC-4 doublon refusé
-- [ ] AC-6 avenant change le plafond
-- [ ] AC-7 reprise après redémarrage
-- [ ] AC-8 réponse orale `to_confirm`
-- [ ] AC-9 quittance détectée, pas d'acceptation implicite
-- [ ] AC-11/12 review bloque avis et montant non sourcé
-- [ ] AC-15 bench mesuré (aucun chiffre non mesuré sur la slide)
-- [ ] AC-16 isolation deux comptes
+- [ ] AC-1 MAAF coverage profile with pages
+- [ ] AC-3 Day-0 declaration before any document request
+- [ ] AC-4 duplicate refused
+- [ ] AC-6 endorsement changes the ceiling
+- [ ] AC-7 resume after restart
+- [ ] AC-8 oral answer `to_confirm`
+- [ ] AC-9 release detected, no implicit acceptance
+- [ ] AC-11/12 review blocks advice and unsourced amount
+- [ ] AC-15 bench measured (no unmeasured figure on the slide)
+- [ ] AC-16 two-account isolation
 
-## Questions ouvertes (voir PRD §6)
+## Open questions (see PRD §6)
 
-Q1 admin Aiven · Q3 voix · Q4 langue vers assureur · Q6/Q7 avis juridique + rémunération · Q8 vérifier n° de jurisprudence sur Légifrance avant affichage · Q9 contrats B/C.
+Q1 Aiven admin · Q3 voice · Q4 language to insurer · Q6/Q7 legal advice + compensation · Q8 verify case-law reference numbers on Légifrance before display · Q9 contracts B/C.
 
-## Journal
+## Log
 
-| Date | Événement |
+| Date | Event |
 |---|---|
-| 2026-10-22 | PRD v1 rédigé à partir de CONTEXTE §1–14, 08a–08d, 09a–09c |
+| 2026-10-22 | PRD v1 written from CONTEXTE §1–14, 08a–08d, 09a–09c |
