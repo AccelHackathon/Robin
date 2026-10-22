@@ -135,7 +135,7 @@ class OutboundDraft(BaseModel):
 
 
 class ReviewContext(BaseModel):
-    claim_id: str
+    claim_id: str | None = None          # None for drafts outside a claim (sentinel alerts, simulated insurer)
     evidence_amounts_eur: list[float]
     derived_amounts_eur: list[float]      # computed from evidence with a cited formula (e.g. business interruption)
     client_instruction_amounts_eur: list[float]

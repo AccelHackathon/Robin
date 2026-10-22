@@ -116,7 +116,7 @@ async def gate(state: SimState) -> SimState:
     try:
         from app.agents.review.gate import review  # workstream C; optional at this stage
         draft = OutboundDraft(channel="email", language="fr", recipient_role="client", subject=state["subject"], body=state["body"])
-        ctx = ReviewContext(claim_id="insurer_sim", evidence_amounts_eur=[], derived_amounts_eur=[], client_instruction_amounts_eur=[],
+        ctx = ReviewContext(claim_id=None, evidence_amounts_eur=[], derived_amounts_eur=[], client_instruction_amounts_eur=[],
                             confirmed_fact_ids=[], cited_clause_ids=[])
         result = await review(draft, ctx)
         if not result.passed:

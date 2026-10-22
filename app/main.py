@@ -9,6 +9,9 @@ from app.agents.claims import graph as claims_graph
 from app.agents.claims import handlers as claims_handlers  # noqa: F401  (registers worker handlers)
 from app.agents.insurer_sim import handlers as insurer_sim_handlers  # noqa: F401
 from app.agents.intake import handlers as intake_handlers  # noqa: F401
+from app.agents.sentinel import handlers as sentinel_handlers  # noqa: F401
+from app.agents.sentinel import routes as sentinel_routes
+from app.agents.sentinel import scheduler as sentinel_scheduler
 from app.channels.email import handlers as email_handlers  # noqa: F401
 from app.channels.email import mailboxes as email_mailboxes
 from app.channels.email import routes as email_routes
@@ -30,6 +33,7 @@ log = logging.getLogger("robin")
 async def lifespan(app: FastAPI):
     stop = asyncio.Event()
     worker_task = None
+    sentinel_task = None
     if await db.open_pool():
         applied = await db.run_migrations()
         log.info("migrations applied: %s", applied or "none")
@@ -43,6 +47,7 @@ async def lifespan(app: FastAPI):
         await claims_graph.setup()         # workstream C: Postgres checkpointer + compiled Claims Agent graph
         if settings.worker_enabled:
             worker_task = asyncio.create_task(worker.run_forever(stop))
+            sentinel_task = asyncio.create_task(sentinel_scheduler.run_forever(stop))  # workstream D
         if telegram_bot.build():           # workstream C: Telegram channel (no-op without TELEGRAM_BOT_TOKEN)
             if settings.telegram_mode == "webhook" and settings.public_base_url:
                 await telegram_bot.start_webhook()
@@ -53,6 +58,8 @@ async def lifespan(app: FastAPI):
         yield
     finally:
         stop.set()
+        if sentinel_task:
+            sentinel_task.cancel()
         if worker_task:
             worker_task.cancel()
             try:
@@ -70,6 +77,7 @@ app.include_router(web_routes.router)          # workstream B
 app.include_router(telegram_routes.router)     # workstream C
 app.include_router(email_routes.router)        # workstream A
 app.include_router(voice_routes.router)        # workstream A
+app.include_router(sentinel_routes.router)     # workstream D
 
 
 @app.get("/")

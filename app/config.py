@@ -29,6 +29,14 @@ class Settings(BaseSettings):
     twilio_phone_number: str | None = None
     insurer_test_phone: str | None = None                # verified number of the teammate playing the insurer
 
+    # Workstream D — Risk Sentinel (continuous monitoring, Keenable web search)
+    keenable_api_key: str | None = None
+    keenable_search_mode: str = "realtime"               # realtime (fast, 1 credit) | pro (deeper)
+    sentinel_enabled: bool = True
+    sentinel_interval_minutes: int = 15                  # sweep cadence per watched account
+    sentinel_lookback_hours: int = 48                    # freshness window for news
+    sentinel_min_severity_to_notify: str = "medium"      # low | medium | high | critical
+
     public_base_url: str | None = None
     internal_api_token: str | None = None                # bearer for /internal/* operator endpoints
     telegram_mode: str = "polling"            # polling | webhook  (C)
