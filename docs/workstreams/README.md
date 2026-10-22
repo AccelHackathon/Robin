@@ -7,6 +7,7 @@ Product spec: `docs/prd/2026-10-22-robin-claims-agent/PRD.md` (authoritative). C
 | **A — Voice & insurer side** | Emile | ElevenLabs calls (Twilio), AgentMail email channel, Insurer Simulator Agent | `A-voice-and-insurer.md` |
 | **B — Onboarding & Intake** | teammate 1 | Web onboarding site, contract ingestion (12 CG), Intake Agent (coverage profile, levers, traps, deadlines), seeds | `B-onboarding-and-intake.md` |
 | **C — Claims Agent & Telegram** | teammate 2 | LangGraph Claims Agent, tools, review gate, Telegram channel, benchmark | `C-claims-agent-and-telegram.md` |
+| **D — Risk Sentinel** | Emile | Continuous monitoring of external risks (Keenable web search), sourced Telegram alerts, alert→claim evidence | `D-risk-sentinel.md` |
 
 ## What is already done (do not redo)
 
@@ -28,7 +29,7 @@ Product spec: `docs/prd/2026-10-22-robin-claims-agent/PRD.md` (authoritative). C
    |---|---|---|
    | `app/main.py`, `app/db.py`, `app/worker.py`, `app/config.py` | C | Post the needed change in the team chat; C applies it within minutes. New settings: add to `app/config.py` yourself, one line, and say so. |
    | `app/contracts.py` | C | Additive only (new fields with defaults, new Literal values). Say so in the commit message. |
-   | `app/migrations/` | each stream has its own number range: **A = 1xx, B = 2xx, C = 3xx** | Never edit an applied migration. Additive only. |
+   | `app/migrations/` | each stream has its own number range: **A = 10x, D = 11x, B = 2xx, C = 3xx** | Never edit an applied migration. Additive only. |
    | `docs/workstreams/*.md` | each owner | Keep "Status" at the top of your spec current; it is how the others know where you are. |
 
 5. Commit messages in English, imperative, with the stream letter: `[A] Add ElevenLabs post-call webhook`.
@@ -50,6 +51,7 @@ Everything crosses stream boundaries through **the database** and **the event qu
 | `agentmail` | `email_received` | A (webhook) | C (claims handler) if the mailbox role is `agent`; A (insurer_sim handler) if role is `simulated_insurer` | `{account_id, mailbox_id, communication_id, from, subject, body_text, attachment_document_ids, provider_ref}` |
 | `elevenlabs` | `call_ended` | A (webhook) | C (claims handler) | `{account_id, claim_id, call_id, transcript, structured_result, provider_ref}` |
 | `scheduler` | `followup_due` | worker (already implemented) | C (claims handler) | `{task_id, reason}` + `claim_id` column |
+| `sentinel` | `sweep_due` | D (sentinel scheduler) | D (sentinel handler) | `{account_id, provider_ref}` |
 
 `account_id` and `claim_id` are columns on `events`; set them when known. `payload.provider_ref` must be unique per provider message (idempotency index exists).
 
