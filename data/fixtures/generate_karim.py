@@ -1,4 +1,9 @@
-"""Generate explicitly fictional policy schedules: python data/fixtures/generate_karim.py [--ceiling 30000]."""
+"""Generate explicitly fictional policy schedules.
+
+    python data/fixtures/generate_karim.py [--ceiling 30000] [--persona thibault]
+
+Default persona is Karim (benchmark case A); `--persona thibault` writes the live-demo persona files.
+"""
 
 import argparse
 from pathlib import Path
@@ -9,13 +14,20 @@ from reportlab.lib.pagesizes import A4
 ROOT = Path(__file__).parent
 
 
-def generate(ceiling=15000):
+PERSONAS = {
+    "karim": {"insured": "Karim Benali / Karim Mobile", "policy": "ROBIN-DEMO-KARIM-001", "label": "Karim", "slug": "karim"},
+    "thibault": {"insured": "Thibault Martin / Thibault Phone Repair", "policy": "ROBIN-DEMO-THIBAULT-001", "label": "Thibault", "slug": "thibault"},
+}
+
+
+def generate(ceiling=15000, persona="karim"):
+    who = PERSONAS[persona]
     endorsement = ceiling != 15000
     path = ROOT / (
-        "karim_endorsement.pdf" if endorsement else "karim_particular_conditions.pdf"
+        f"{who['slug']}_endorsement.pdf" if endorsement else f"{who['slug']}_particular_conditions.pdf"
     )
     c = canvas.Canvas(str(path), pagesize=A4)
-    c.setTitle("Robin - fictional Karim policy schedule")
+    c.setTitle(f"Robin - fictional {who['label']} policy schedule")
     c.setFillColor(HexColor("#062a66"))
     c.rect(0, 735, 595, 107, fill=1, stroke=0)
     c.setFillColor(HexColor("#ffffff"))
@@ -24,17 +36,17 @@ def generate(ceiling=15000):
         40, 795, "Conditions particulières" if not endorsement else "Avenant au contrat"
     )
     c.setFont("Helvetica", 11)
-    c.drawString(40, 771, "Multirisque professionnelle / MAAF - scénario Karim")
+    c.drawString(40, 771, f"Multirisque professionnelle / MAAF - scénario {who['label']}")
     c.setFillColor(HexColor("#062a66"))
     c.setFont("Helvetica-Bold", 11)
     c.drawString(40, 709, "DOCUMENT FICTIF - DÉMONSTRATION ROBIN UNIQUEMENT")
     c.setFont("Helvetica", 10)
     lines = [
         "Ce document est une fixture de test, sans valeur contractuelle.",
-        "Assuré : Karim Benali / Karim Mobile",
+        f"Assuré : {who['insured']}",
         "Activité : réparation et revente de smartphones",
         "Adresse du risque : 12 rue de la République, 13001 Marseille",
-        "Police : ROBIN-DEMO-KARIM-001",
+        f"Police : {who['policy']}",
         "Conditions générales de référence : MAAF 11031 - 01/26",
         "Date du document : 2026-10-16"
         if endorsement
@@ -100,4 +112,6 @@ def generate(ceiling=15000):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--ceiling", type=int, default=15000)
-    print(generate(parser.parse_args().ceiling))
+    parser.add_argument("--persona", choices=sorted(PERSONAS), default="karim")
+    args = parser.parse_args()
+    print(generate(args.ceiling, args.persona))

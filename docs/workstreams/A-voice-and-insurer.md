@@ -14,7 +14,7 @@
 - [x] Live post-call webhook **tested twice on production** (commit `1275f7c` deployed): HMAC verified, `reached_human`, structured answers with rationale when the insurer does not answer, `call_ended` emitted and consumed by C's handler (0 failed events)
 - [x] Reconciliation watcher for calls without webhook (Twilio check at 90 s / 240 s, 8-minute timeout, startup sweep) — code deployed, real no-answer run not yet exercised (both test calls were answered)
 - [x] French language preset + `language_detection` tool on the agent
-- [x] `POST /internal/calls` (bearer `INTERNAL_API_TOKEN`) to start a call on a claim during rehearsals; demo claim `800cdd2d-7130-4722-a804-d6afdf1817d4` (account `demo-karim@robin.local`) exists in production
+- [x] `POST /internal/calls` (bearer `INTERNAL_API_TOKEN`) to start a call on a claim during rehearsals; rehearsal claim `800cdd2d-7130-4722-a804-d6afdf1817d4` (account `demo-karim@robin.local`) exists in production; the live demo account is `thibault@robin-demo.fr` (Thibault Phone Repair, Marseille)
 - [ ] Optional: one real "let it ring" call to watch the `voicemail_or_no_answer` path
 
 Integration notes for the merge: `call_ended` payload = `{call_id, transcript, structured_result{reached_human, answers[{question_index, answered, answer_summary, answer_verbatim, rationale, confidence}], insurer_reference, documents_requested, summary}, status, finalized_by}`; `email_received` payload carries `mailbox_role` (`agent` → C, `simulated_insurer` → A). Secrets on Runtime: all of stream A's are set; still missing globally: `TELEGRAM_BOT_TOKEN`. LLM provider is OpenAI only (`app/llm.py`).

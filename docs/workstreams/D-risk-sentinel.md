@@ -50,4 +50,4 @@ Reads: `businesses`, `coverage_profile`, `deadline_rules`, `telegram_links`, `cl
 
 ## Demo
 
-`POST /internal/sentinel/sweep {"account_id": ...}` on the Karim demo account (Marseille) returns live alerts in ~30 s; with Telegram linked the alert lands in the client's chat. Then declare a loss in the same window: the alert is linked to the claim as evidence.
+`POST /internal/sentinel/sweep {"account_id": ...}` on the Thibault demo account (`thibault@robin-demo.fr`, Marseille, account `c83fab57-aec9-4611-9dec-4dfd1631ee46`) returns live alerts in ~30 s; with Telegram linked the alert lands in the client's chat. Then declare a loss in the same window: the alert is linked to the claim as evidence.
