@@ -1,6 +1,6 @@
 # Robin
 
-Autonomous insurance-claims agent for French small businesses. After a loss, the
+Autonomous insurance-claims agent for small businesses. After a loss, the
 business owner onboards on a website (uploads the policy PDFs, signs a mandate), then
 talks to Robin on Telegram. Robin declares the loss to the insurer the same day,
 collects evidence, builds a clause-cited statement of loss, emails and calls the
@@ -37,7 +37,7 @@ any outbound message.
 | Detects release language in an insurer offer and explains its effect factually | Collects funds (the insurer pays the business owner) |
 | Presents the offer as "X € of the Y € documented", lists the generic options without weighting | Treats silence as acceptance |
 
-**Why this matters legally.** French case law qualifies paid, personalised advice on
+**Why this matters legally.** Case law qualifies paid, personalised advice on
 insurers' settlement offers as unlawful practice of legal advice: Cass. 2e civ.
 9 December 2015 (n° 14-24.268), CA Nîmes 7 July 2023 (appeal dismissed), and Cass.
 2e civ. 7 May 2025 as referenced in PRD §2.15. The distinction the law draws is between
@@ -115,7 +115,7 @@ Node behaviour as implemented:
   `OPENAI_API_KEY` set it also reads documents (vision for images, `pdftotext` for
   PDFs) and structures the client's narrative into a neutral description and candidate
   loss items; without a key these steps degrade gracefully.
-- `act` builds drafts from templates: French declaration email, English Day-0
+- `act` builds drafts from templates: declaration email in the insurer's language, English Day-0
   checklist, acknowledgements that state how items map to the policy (caps and gaps
   with pages), written-confirmation request after a call, D+7 follow-up, offer
   summary. Drafts never recommend or originate an amount.
@@ -189,7 +189,7 @@ carries its source.
 **Execution state** — LangGraph checkpoint tables created by
 `langgraph-checkpoint-postgres`; the Claims Agent thread survives restarts.
 
-**Contract corpus.** `data/contrats/txt/` holds 12 public French general conditions
+**Contract corpus.** `data/contrats/txt/` holds 12 public general conditions
 and IPIDs (AXA, Allianz, Generali, Groupama, Hiscox, MAAF, MMA, Pacifica, Sogessur),
 exported with `pdftotext -layout` and page-separated by `\f`. `app/ingestion` splits
 them into page-local clauses (1,655 clauses locally) whose bodies are exact slices of
@@ -210,7 +210,7 @@ conditions 11031 (01/2026) from the corpus plus a synthetic policy schedule
   consents; the Intake Agent produces a coverage profile with pages; the deep link
   `/start <code>` connects his Telegram chat.
 - Telegram: "My shop was looted Saturday night" + photos + invoices. The thread opens a
-  claim, sends the French declaration email to the insurer on Day 0 and the Day-0
+  claim, sends the declaration email (in French, the demo insurer's language) to the insurer on Day 0 and the Day-0
   checklist to Karim (police complaint, photos before works, boarding-up, no repairs
   without written approval).
 - Karim re-sends an invoice already on file: the sha256 match marks it `duplicate_of`
@@ -365,7 +365,7 @@ checked against the code on 22 October 2026.
 | Offer detection, `offers` row, release-language detection, offer summary | implemented in `graph.py` / `analyze.py` / `act.py` |
 | Loss item ↔ cover matching, claim digest, insurer position ledger, insurer profiles | implemented in `brain/`, tested in `tests/test_claims_brain.py` |
 | Telegram bot: linking, media, voice notes, send adapter, webhook | code ready; blocked on `TELEGRAM_BOT_TOKEN` |
-| AgentMail: mailbox per account, send adapter, inbound webhook, French templates | done, tested on production |
+| AgentMail: mailbox per account, send adapter, inbound webhook, insurer-language templates | done, tested on production |
 | ElevenLabs + Twilio: agent, `start_call` adapter, post-call webhook, reconciliation | done, tested on production |
 | Insurer Simulator with release PDF | done, tested end to end on production |
 | Claims Agent triggering `start_call` itself | not wired; calls are started via `POST /internal/calls` |
