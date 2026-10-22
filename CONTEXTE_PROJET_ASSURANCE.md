@@ -2,7 +2,12 @@
 
 Mis à jour le **22 octobre 2026**, heure de Paris.
 
-Ce document sert de contexte pour reprendre la conception et construire le produit dans une autre session. Il consolide les échanges, le brief du hackathon, le schéma manuscrit IMG_1211 et la recherche officielle Aiven du 22 octobre 2026. Il distingue les décisions de Mathis, les recommandations et les capacités effectivement vérifiées. **Le produit n’est pas encore implémenté dans cet espace de travail ; les accès Aiven et fournisseurs restent à fournir/configurer.**
+Ce document sert de contexte pour reprendre la conception et construire le produit dans une autre session. Il consolide les échanges, le brief du hackathon, le schéma manuscrit IMG_1211 et la recherche officielle Aiven du 22 octobre 2026. Il distingue les décisions de Mathis, les recommandations et les capacités effectivement vérifiées. **Le produit n’est pas encore implémenté dans ce dépôt.**
+
+> **Mise à jour du 22 octobre, midi — à lire en premier.** Trois changements par rapport aux sections 1 à 13 :
+> 1. **Telegram remplace WhatsApp** comme canal du commerçant (décision de l'équipe : WhatsApp Cloud API ne marche pas dans le temps imparti). Partout où les sections ci-dessous disent « WhatsApp », lire « Telegram ». Les contraintes WhatsApp (fenêtre 24 h, templates, vérification du numéro) **disparaissent**.
+> 2. **Aiven est provisionné** : organisation avec essai actif (50 $ de crédits, 30 jours), projet `larp`, PostgreSQL `pg-3f9bc500` (plan Developer-1, 1 CPU / 1 Go / 8 Go, DigitalOcean `fra`) en cours d'exécution. Runtime est disponible dans le projet. Le lien GitHub → Runtime reste à faire et exige le rôle admin d'organisation.
+> 3. **Stack et architecture arrêtées** : Python / FastAPI / **LangGraph** avec checkpointer Postgres, service unique sur Runtime. Le détail, le scénario de démo et l'ordre de build sont dans la **section 14**, qui fait référence en cas de contradiction avec le reste du document.
 
 ## 1. Objectif et vision
 
@@ -478,7 +483,7 @@ Deux cas de test entièrement fictifs sont décrits : complément de preuves apr
 
 | Brique | Choix | Pourquoi / notes |
 |---|---|---|
-| **WhatsApp** | **Compte WhatsApp Business** créé par l'équipe, branché via l'**API WhatsApp Cloud (Meta)** | C'est le canal principal du commerçant : texte, photos, documents, vocaux. Les médias arrivent par webhook et sont téléchargés côté backend. |
+| **Canal commerçant** | ~~WhatsApp Cloud API~~ → **Telegram Bot API** (décision de midi, voir §14) | Bot créé via `@BotFather` en deux minutes, sans vérification. Texte, photos, documents, vocaux (`.oga`) via `getFile`. Long polling en dev, webhook en prod. Messages sortants libres après `/start`. |
 | **Email** | **AgentMail** : une boîte par client ou dossier, envoi et réception par API, webhook à chaque email reçu | Offre gratuite : 3 boîtes, 100 emails/jour, adresses en `@agentmail.to`. L'envoi passe par HTTPS, ce qui contourne le blocage des ports 25/465 sur Runtime (§9.5). Aucun accès à la boîte du commerçant. |
 | **Appels** | **ElevenLabs Agents**, avec le dossier injecté au démarrage de l'appel (variables dynamiques) | Plan A gratuit : l'appel par le **widget web** ElevenLabs (navigateur), sans numéro. Option « vrai téléphone » : un numéro **Twilio trial** (gratuit, sans CB ; numéros vérifiés uniquement, 10 min max, message « trial » lu en début d'appel). Utiliser les crédits ElevenLabs du Builders Pack. |
 | **LLM + OCR** | **Claude** : boucle d'agent avec outils, et vision pour extraire le texte des photos, factures et PV en JSON structuré | L'extraction depuis les images est au cœur de la promesse « l'agent fait tout ». |
@@ -513,3 +518,153 @@ Le benchmark est détaillé au §7. Les chiffres clés à afficher sur la slide 
 - les **€ identifiés** dans trois versions : déclaration naïve, LLM seul, notre agent ;
 - le **temps de constitution du dossier**, de l'agent comparé au manuel : photos et factures lues automatiquement, pièces rattachées, chaque poste chiffré et cité ;
 - le **coût par dossier**.
+
+## 14. Architecture retenue et plan de build (22 octobre 2026, midi)
+
+Cette section remplace les points des sections précédentes qu'elle contredit. Elle résulte d'une session de cadrage avec l'équipe le jour du hackathon. Les choix ci-dessous sont **des décisions**, sauf mention « à vérifier ».
+
+### 14.1. Ce qu'on construit, en une phrase
+
+Un **système agentique** qui, pour chaque commerçant, instancie un agent doté de sa propre mémoire, de sa propre boîte mail et de ses propres outils ; cet agent tourne dans **sa propre boucle** par dossier de sinistre, de la déclaration jusqu'à une proposition d'indemnisation, en faisant lui-même les allers-retours (pièces au client, mails et appels à l'assureur, relectures, relances), et ne rend la main au commerçant qu'au moment de l'offre.
+
+### 14.2. Décisions prises pendant le cadrage
+
+| Sujet | Décision | Pourquoi |
+|---|---|---|
+| Canal commerçant | **Telegram** (Bot API) | WhatsApp Cloud API trop long à obtenir. Telegram : token immédiat, long polling sans URL publique, messages sortants libres, deep link pour lier le compte web. Narratif pitch : « la couche canal fait 200 lignes, WhatsApp dès validation Meta ». |
+| Onboarding | **Reste sur le site** (bloc 1 confirmé) : compte, téléphone, contrats, identité, **mandat signé**, historique, puis liaison Telegram | Décision explicite de l'équipe. C'est à ce moment que l'agent est créé, reçoit sa boîte mail et construit sa mémoire initiale. |
+| Côté assureur | **Mails : assureur simulé** par un second agent. **Appel vocal : un membre de l'équipe joue l'assureur** en direct | Les mails doivent être reproductibles pendant 5 minutes de pitch ; l'appel est le moment « live ». Le simulateur est nommé comme tel devant le jury. |
+| Langage | **Python 3.12** | Traitement PDF/pages, SDK Anthropic, `python-telegram-bot`, LangGraph natif. |
+| Framework agent | **LangGraph** (+ `langchain-anthropic`), graphes écrits explicitement, pas d'agent ReAct générique | Décision de l'équipe. Bon fit : le **checkpointer Postgres** persiste l'état de chaque dossier dans Aiven PG, `interrupt()` modélise nativement les attentes (pièce du client, réponse mail, décision sur l'offre). |
+| Topologie | **Un seul service** FastAPI sur Runtime : site + webhooks + worker dans le même process | Un Dockerfile, un déploiement, tout l'état en base. Deux services seraient plus propres, pas aujourd'hui. |
+| Cas démo | **Cas A « Karim »** (smartphones, Marseille) sur **CG MAAF 11031 (01/2026)** + conditions particulières synthétiques | Contrat le plus récent du corpus, clauses déjà vérifiées, écart le plus parlant (38 100 € déclarés seul vs ≈ 89 700 € défendables, `08c` §6). |
+| Modèle | Claude (texte + vision) via `langchain-anthropic` | Vision pour factures, photos, PV. |
+| LangSmith | Optionnel, bonus pour montrer les traces | Pas une dépendance. |
+
+### 14.3. Les agents et leur mémoire
+
+Trois agents LangGraph distincts, qui communiquent uniquement par la base et par les canaux réels (mail), jamais par appel direct :
+
+**A. Intake Agent** — tourne une fois à la fin de l'onboarding web, puis à chaque nouveau document.
+Entrée : les PDF déposés. Sortie : la **mémoire initiale** de l'entreprise. Il classe chaque document (CG, CP, avenant, IPID, constat, échange), découpe en **clauses paginées**, extrait le profil de garanties (garanties souscrites, plafonds, franchises, options, exclusions notables) **avec page source et niveau de confiance**, repère les documents manquants (ex. CP absentes → tâche), et prépare le message de bienvenue. Il ne déduit jamais qu'une option n'est pas souscrite parce que la page manque.
+
+**B. Claims Agent** — un **thread LangGraph par dossier** (`thread_id = claim_id`). C'est la boucle principale.
+Nœuds :
+1. `load_memory` — charge le profil entreprise, le profil de garanties, le dossier courant (faits, pièces, état des pertes, actions, échanges).
+2. `triage` — qualifie l'événement entrant (nouvelle pièce, réponse mail, résultat d'appel, question du client, relance programmée) et décide : répondre, mettre à jour, agir, ou attendre.
+3. `analyze` — met à jour les faits et **l'état des pertes** : chaque poste = preuve(s) + clause (page) + calcul + condition éventuelle. Dédoublonne les pièces (hash + montant/date/fournisseur). Signale contradictions et pièces manquantes.
+4. `act` — choisit et exécute un ou plusieurs outils (ci-dessous).
+5. `review` — nœud de contrôle distinct : vérifie que chaque poste a une preuve et une clause existante, que les pages citées contiennent bien ce qui est affirmé, qu'aucun montant n'est compté deux fois, et qu'aucun mail sortant ne promet ou n'accepte quoi que ce soit. Renvoie à `analyze` si échec.
+6. `wait` — `interrupt()` typé : `awaiting_client`, `awaiting_insurer_email`, `awaiting_call_result`, `awaiting_followup`. Le graphe est persisté ; un webhook ou le scheduler fait `Command(resume=payload)`.
+7. `present_offer` — fin de boucle : résume l'offre, l'écart avec l'état des pertes, les leviers, et pose la question au commerçant. **Une absence de réponse n'est jamais une acceptation.** Après décision : `contest` relance la boucle, `accept` passe le dossier en suivi de paiement.
+
+Outils du Claims Agent (fonctions Python `@tool`, chacune écrit une ligne dans `actions`) :
+`get_claim_memory`, `search_clauses(contract_id, query)`, `read_document(doc_id)` (vision → JSON structuré), `update_loss_statement(items)`, `ask_client(text, requested_items)`, `send_email(to, subject, body, attachment_ids)`, `start_call(goal, questions)`, `schedule_followup(when, reason)`, `log_fact(fact, source, confidence)`, `present_offer(offer_id)`.
+
+**C. Insurer Simulator Agent** — un graphe séparé, avec sa propre boîte AgentMail (`sinistres-demo@agentmail.to` ou équivalent), **étiqueté « simulated insurer »** dans l'UI et le pitch.
+Il lit les mails reçus, suit un script paramétrable par scénario (accusé de réception → demande de pièce → offre plafonnée) et répond avec un délai court. Il ne voit **jamais** la mémoire du Claims Agent : il n'a que les mails. Il permet de rejouer la démo à l'identique.
+
+**Mémoire, deux niveaux :**
+- **Mémoire durable (nos tables PG)** : entreprise, représentants, mandat, boîte mail, contrats et clauses, dossiers, pièces, faits, état des pertes, échanges, actions, offres. C'est la source de vérité, lisible par le jury. Une correction crée une nouvelle version, elle n'écrase pas.
+- **État d'exécution (checkpointer LangGraph dans la même base)** : où en est chaque thread, sur quoi il attend. Permet la reprise après redémarrage et la pause/reprise sur événement externe. On peut utiliser le Store LangGraph pour la mémoire inter-threads (profil entreprise), **à vérifier** selon la version installée ; sinon lecture directe des tables.
+
+### 14.4. Modèle de données (Aiven PostgreSQL)
+
+Tables principales, toutes avec `id`, `created_at`, et `account_id` pour l'isolement entre clients :
+
+- `accounts` (email, hash mdp), `businesses` (nom, SIRET, adresse, dirigeant, téléphone, assureur, courtier), `mandates` (version, périmètre, signataire, horodatage, preuve, révocation), `consents` (mandat / Telegram / données, séparés).
+- `mailboxes` (adresse AgentMail, identifiant, rôle `agent` ou `simulated_insurer`).
+- `telegram_links` (chat_id, code de liaison, état), `link_codes` (code à usage unique du deep link).
+- `documents` (type, origine, version, date du document, hash, contenu `bytea` pour aujourd'hui, texte extrait), `clauses` (document_id, page, titre, texte, `tsvector`).
+- `coverage_profile` (garantie, souscrite ?, plafond, franchise, conditions, clause_id source, confiance).
+- `claims` (statut, date du sinistre, nature, résumé), `facts` (texte, source, confiance, statut, `supersedes`), `evidence` (document_id, type, montant, date, fournisseur, hash, `duplicate_of`), `loss_items` (poste, montant demandé, evidence_ids, clause_id, calcul, condition, statut), `communications` (canal, direction, destinataire, contenu, accusé, échec), `calls` (objectif, questions, transcription, résultat structuré, confiance), `actions` (outil, arguments, résultat, événement déclencheur), `scheduled_tasks` (when, reason, état), `offers` (montants par poste, écart, décision du client, horodatage).
+- `events` (source, payload brut, état `pending/processing/done/failed`) : file d'attente consommée par le worker avec `SELECT … FOR UPDATE SKIP LOCKED`.
+- Tables du checkpointer LangGraph (créées par la librairie).
+
+Recherche de clauses : full-text Postgres (`tsvector`, dictionnaire `french`). pgvector seulement si le temps le permet ; 12 contrats n'en ont pas besoin.
+
+### 14.5. Flux d'événements
+
+```
+Telegram update ─┐
+AgentMail webhook ─┼─> INSERT events ─> worker (asyncio, même process)
+ElevenLabs post-call ┤                      │
+scheduler (relances) ┘                      ├─ thread existant en attente ? ─> Command(resume=…)
+                                            └─ sinon ─> nouveau run du graphe
+                                                        │
+                                            tools ─> PG (actions, communications, …) ─> Telegram / AgentMail / ElevenLabs
+```
+
+- Les webhooks répondent en moins d'une seconde ; tout le travail long est dans le worker.
+- Chaque action n'est marquée effectuée qu'une fois le résultat constaté (accusé AgentMail, `message_id` Telegram, fin d'appel).
+- Les signatures des webhooks AgentMail/ElevenLabs sont vérifiées ; le token Telegram sert de secret d'URL si on passe en webhook.
+
+### 14.6. Intégrations externes
+
+- **Telegram** : `python-telegram-bot`. Long polling tant qu'on développe ; webhook sur l'URL Runtime quand c'est déployé. Médias téléchargés via `getFile`, stockés dans `documents`. **Vocaux** : `.oga` Opus → transcription par ElevenLabs Scribe (crédits Builders Pack) ou Whisper ; Claude ne traite pas l'audio.
+- **AgentMail** : une boîte créée par compte à la fin de l'onboarding (limite offre gratuite : 3 boîtes → une pour Karim, une pour l'assureur simulé, une de réserve). Webhook « message reçu » → `events`. Envoi en HTTPS, compatible Runtime.
+- **ElevenLabs Agents** : appel sortant vers le numéro vérifié du coéquipier qui joue l'assureur (Twilio trial) ; variables dynamiques = objectif, questions, résumé du dossier ; **post-call webhook** avec transcription et résultat structuré → `events`. Repli si la téléphonie échoue : widget web ElevenLabs projeté à l'écran. Toute réponse orale est stockée avec provenance « oral, non confirmé » et déclenche une demande de confirmation écrite.
+- **Claude** via `langchain-anthropic` ; vision pour factures/photos/PV ; sorties structurées pour les faits et les postes.
+
+### 14.7. Scénario de démo (≈ 5 minutes)
+
+Persona : Karim, réparation et revente de smartphones, Marseille hypercentre. Contrat : CG MAAF 11031 (01/2026) + **CP synthétiques d'une page** : extension émeutes et mouvements populaires, vol plafonné 15 000 €, perte d'exploitation souscrite avec franchise 3 jours, valeur à neuf matériel, franchise générale 1 000 €.
+
+**Bloc 1 — site (≈ 1 min 30)**
+1. Compte (email + mot de passe).
+2. Commerce : nom, SIRET, adresse, dirigeant, téléphone, assureur.
+3. Upload : CG MAAF, CP Karim, un ancien échange (optionnel).
+4. Mandat affiché, trois cases distinctes (mandat, Telegram, données), nom tapé + horodatage.
+5. Validation → boîte AgentMail créée, Intake Agent lance l'ingestion, profil de garanties affiché avec pages sources.
+6. Bouton « Open Telegram » (deep link). `/start` lie le chat ; l'agent dit bonjour **en anglais** et résume ce qu'il a compris du contrat.
+
+**Bloc 2 — Telegram (≈ 3 min)**
+7. Karim : « My shop was looted Saturday night » + 3 photos + 2 factures fournisseurs.
+8. L'agent ouvre le dossier, extrait faits et montants, **envoie la déclaration initiale par mail** à l'assureur simulé, demande les pièces manquantes (inventaire, export de caisse, appareils clients en réparation, dépôt de plainte).
+9. Karim renvoie une facture déjà envoyée → **pas de doublon**, l'agent le dit.
+10. L'assureur simulé répond : demande le nombre d'appareils clients et la plainte. L'agent relaie à Karim, met à jour le dossier.
+11. **Appel ElevenLabs à l'assureur (joué par l'équipe)** : « Does the riot extension apply to stock, or the €15,000 theft cap? ». La réponse entre en mémoire avec provenance orale ; l'agent demande confirmation écrite par mail.
+12. L'assureur simulé envoie une offre ≈ 20 750 €. L'agent **s'arrête et rend la main** : offre, montant soutenu par l'état des pertes, écart principal (stock plafonné vol au lieu d'émeutes), proposition de contester ou de voir le détail. Karim décide.
+
+**Moments « données » à faire voir** : le doublon refusé ; l'avenant/CP qui change un plafond ; la reprise de session (redémarrer le service pendant la démo et montrer que le thread reprend) ; la réponse orale qui ne modifie pas le contrat tant qu'elle n'est pas écrite.
+
+### 14.8. Benchmark (slide de preuve)
+
+Script `bench/` exécuté sur les 3 cas composites de `08c` §6 (A Karim, B Boulangerie Martin, C Optique Pauline), chacun croisé avec son contrat :
+
+| Variante | Entrée | Ce qu'on mesure |
+|---|---|---|
+| Déclaration naïve | la colonne « déclaré seul » de `08c` | € déclarés |
+| LLM seul | même modèle, même récit, **sans** accès aux clauses ni aux factures | € identifiés, postes trouvés, citations inventées |
+| Claims Agent | récit + pièces + contrat via outils | € identifiés, **rappel des postes réclamables**, **% de citations correctes** (page existe et dit ce qui est affirmé), coût tokens, latence |
+
+Vérité terrain : `08a_*`, `08b_*` (clauses et pages) et `08c` §6 (postes). Le « temps manuel chronométré » du §7 est **retiré** du benchmark du jour : infaisable honnêtement en une journée. Aucun chiffre n'est affiché avant d'avoir été mesuré.
+
+### 14.9. Déploiement Aiven
+
+- Projet `larp`, PG `pg-3f9bc500` déjà en route. Créer l'application Runtime depuis le dépôt GitHub (prérequis : admin d'organisation Aiven + installation de l'app GitHub), `Dockerfile` à la racine, `EXPOSE 8080`, intégration `application_service_credential` → `DATABASE_URL`.
+- Migrations au démarrage (une seule instance). Secrets (Anthropic, Telegram, AgentMail, ElevenLabs) en variables marquées secrètes.
+- Le déploiement n'est pas automatique sur push : `redeploy` via API après chaque changement.
+- Logs Runtime retenus 24 h : l'historique métier est en base, pas dans les logs.
+
+### 14.10. Ordre de build
+
+1. **Squelette + Aiven** (bloquant, à faire en premier) : FastAPI « hello », Dockerfile, déploiement Runtime, PG reliée, migration de test, lecture/écriture vérifiée. Si le lien GitHub bloque, on le sait avant midi.
+2. **Ingestion** : découpage des 12 CG en clauses paginées (`\f` de `pdftotext -layout`), full-text, Intake Agent sur MAAF + CP Karim, profil de garanties avec pages.
+3. **Claims Agent minimal** : graphe `load_memory → analyze → review → present` sur un dossier seedé, outils `search_clauses`, `read_document`, `update_loss_statement`. État des pertes cité page à page. **C'est le cœur ; tout le reste peut être dégradé, pas ça.**
+4. **Telegram** : liaison par deep link, texte/photos/documents entrants, `ask_client`, `interrupt`/`resume` sur réponse du client, dédoublonnage.
+5. **Benchmark** : script, 3 cas, chiffres pour la slide.
+6. **AgentMail** : boîte par compte, `send_email`, webhook entrant, Insurer Simulator Agent.
+7. **Site d'onboarding** : 4 étapes, mandat, consentements, déclenchement de l'Intake Agent, écran final avec deep link.
+8. **ElevenLabs** : appel sortant, post-call webhook, provenance orale.
+9. **Vocaux Telegram** (transcription), reprise après redémarrage démontrée, polissage du pitch.
+
+Si le temps manque : 8 passe en widget web ou en slide ; 9 saute ; 7 peut être réduit à une seule page. 1 à 5 ne se négocient pas.
+
+### 14.11. Ce qui reste ouvert
+
+- Qui dans l'équipe a le rôle admin d'organisation Aiven pour le lien GitHub.
+- Numéro Twilio trial vérifié pour l'appel ; crédits ElevenLabs effectivement disponibles.
+- Nom du bot Telegram et nom de produit (aucun arrêté).
+- Store LangGraph pour la mémoire inter-threads vs lecture directe des tables : trancher à l'installation selon la version.
+- Mécanisme de signature du mandat : case + nom tapé + horodatage pour la démo ; signature électronique qualifiée plus tard.
