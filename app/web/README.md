@@ -20,7 +20,7 @@ Without the model key, ingestion, uploads and onboarding still work. Candidate c
 
 ## Integration with A and C
 
-- `web/onboarding_done` is emitted exactly once after the mandate transaction. A owns its mailbox handler. Migration 200 transactionally fans it out into `web/document_added`, which B consumes. This works with the existing single-handler worker without changing it.
+- `web/onboarding_done` is emitted exactly once after the mandate transaction. A owns its mailbox handler. Migration 200 transactionally fans it out into `web/document_added`, which B consumes. The shared worker now supports multiple handlers; B retains this separate queued event so intake and mailbox provisioning can complete independently.
 - Uploads emit `web/document_added` transactionally with their document row. Duplicate uploads do not create a duplicate event.
 - B writes `account_contracts`, `coverage_profile`, `contract_levers`, `deadline_rules`, `intake_tasks`, and `onboarding.welcome_brief`. The welcome brief is an **unsent draft**: C must review it before sending it through Telegram.
 - SQL `coverage_profile.subscribed` stays boolean/NULL; the web API serializes yes/no/unknown. `source_clause_id` is bigint. Private `search_clauses` and `verify_quote` calls must pass `account_id=`; two-argument calls only access public corpus clauses.

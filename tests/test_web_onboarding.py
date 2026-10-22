@@ -14,6 +14,12 @@ from app.agents.intake.graph import run_intake, rows
 from app.ingestion.search import search_clauses, verify_quote
 
 
+@pytest.fixture(autouse=True)
+def _no_db():
+    """Override the unit-suite fixture: these tests require the real dedicated pool."""
+    yield
+
+
 @pytest.fixture(scope="module")
 def client():
     url = os.getenv("ROBIN_TEST_DATABASE_URL")

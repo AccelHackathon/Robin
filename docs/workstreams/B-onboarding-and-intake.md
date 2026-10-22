@@ -13,7 +13,7 @@
 
 ### Implementation checkpoint
 
-- Verification: 19 tests passed against a dedicated PostgreSQL database; import check and local `/health` (`db: ok`) passed. Desktop and 390px mobile inspected in Chrome; both fixture PDFs rendered and reviewed.
+- Verification: 43 integrated tests passed (including 19 B tests, with a dedicated PostgreSQL database); import check and local `/health` (`db: ok`) passed. Desktop and 390px mobile inspected in Chrome; both fixture PDFs rendered and reviewed.
 - Production acceptance remains open: Runtime database access, model credentials, bot username/token, and A/C integration are not available in this checkout. See `app/web/README.md` for exact handoff contracts.
 
 - Local PostgreSQL: 12 corpus documents / 1,655 verbatim page-local clauses; idempotent ingestion verified. Production load pending Runtime access.
