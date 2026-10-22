@@ -31,6 +31,8 @@ class Settings(BaseSettings):
     public_base_url: str | None = None
     telegram_mode: str = "polling"            # polling | webhook  (C)
     telegram_bot_username: str | None = None  # B's deep link
+    session_secret: str | None = None
+    intake_model: str = "claude-sonnet-4-6"
     worker_enabled: bool = True
     worker_poll_seconds: float = 1.0
 
