@@ -37,6 +37,8 @@ def build() -> Application | None:
     if not settings.telegram_bot_token:
         log.warning("TELEGRAM_BOT_TOKEN not set; Telegram channel disabled")
         return None
+    # httpx logs every request URL at INFO, and Bot API URLs contain the token. Never log it.
+    logging.getLogger("httpx").setLevel(logging.WARNING)
     app = Application.builder().token(settings.telegram_bot_token).build()
     app.add_handler(MessageHandler(filters.COMMAND & filters.Regex(r"^/start"), on_start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, on_text))
