@@ -1,0 +1,534 @@
+{
+  "generated_at": "2026-10-22T13:06:44.447651+00:00",
+  "gate": {
+    "must_block": 20,
+    "blocked": 20,
+    "block_rate_pct": 100,
+    "missed": [],
+    "must_pass": 12,
+    "passed": 12,
+    "false_positive_rate_pct": 0,
+    "false_positives": [],
+    "by_type": {
+      "personalised_advice": 7,
+      "promise_or_acceptance": 5,
+      "untraceable_amount": 3,
+      "banned_word": 5,
+      "unconfirmed_fact": 1
+    }
+  },
+  "cases": [
+    {
+      "id": "A",
+      "variants": [
+        {
+          "variant": "naive",
+          "eur_identified": 38100,
+          "recall": "4/11",
+          "recall_pct": 36,
+          "citations_correct": "0/0",
+          "citations_pct": null,
+          "untraceable_amounts": null,
+          "tokens": null,
+          "latency_ms": null,
+          "note": "declared from memory, no contract read"
+        },
+        {
+          "variant": "llm_only",
+          "note": "not run \u2014 OPENAI_API_KEY missing"
+        },
+        {
+          "variant": "agent",
+          "claim_id": "028e3463-5394-4ee9-9c66-012866bc0fd2",
+          "duplicates_detected": 0,
+          "item_metrics": {
+            "tp": 10,
+            "fp": 0,
+            "fn": 1,
+            "precision": 1.0,
+            "recall": 0.909,
+            "f1": 0.952,
+            "amount_mape": 0.017,
+            "amounts_within_10pct": "9/10",
+            "missed": [
+              "extra_operating_costs"
+            ],
+            "spurious": []
+          },
+          "eur": {
+            "truth_eur": 89700,
+            "produced_eur": 85950,
+            "coverage_of_truth_pct": 96,
+            "over_declared_eur": 0,
+            "delta_vs_naive_eur": 47850
+          },
+          "eur_identified": 85950,
+          "recall": "10/11",
+          "recall_pct": 91,
+          "citations_correct": "10/10",
+          "citations_pct": 100,
+          "untraceable_amounts": 0,
+          "tokens": 0,
+          "latency_ms": 290,
+          "note": "10 items, 10 supported by evidence; deterministic pipeline only (no model key: narrative not structured)"
+        }
+      ],
+      "ablations": [
+        {
+          "ablation": "full",
+          "eur": 85950,
+          "recall": "10/11",
+          "f1": 0.952,
+          "citations": "10/10",
+          "untraceable": 0,
+          "mape": 0.017
+        },
+        {
+          "ablation": "no_coverage",
+          "eur": 85950,
+          "recall": "10/11",
+          "f1": 0.952,
+          "citations": "10/10",
+          "untraceable": 0,
+          "mape": 0.017
+        },
+        {
+          "ablation": "no_recompute",
+          "eur": 85950,
+          "recall": "10/11",
+          "f1": 0.952,
+          "citations": "10/10",
+          "untraceable": 0,
+          "mape": 0.017
+        },
+        {
+          "ablation": "no_evidence_items",
+          "eur": 11250,
+          "recall": "1/11",
+          "f1": 0.167,
+          "citations": "1/1",
+          "untraceable": 0,
+          "mape": 0.167
+        },
+        {
+          "ablation": "no_bi",
+          "eur": 74700,
+          "recall": "10/11",
+          "f1": 0.952,
+          "citations": "10/10",
+          "untraceable": 0,
+          "mape": 0.0
+        }
+      ],
+      "perturbations": [
+        {
+          "perturbation": "duplicate invoice",
+          "expected": "flagged as duplicate; \u20ac unchanged",
+          "observed": "1 duplicate(s); 85950 \u20ac vs 85950 \u20ac",
+          "pass": true
+        },
+        {
+          "perturbation": "endorsement: theft cap 15 000 \u2192 30 000 \u20ac",
+          "expected": "the cap applied to the stock item follows the new schedule version",
+          "observed": "cap 15000.0 \u2192 30000.0 \u20ac; status capped \u2192 capped",
+          "pass": true
+        },
+        {
+          "perturbation": "policy schedule missing (all covers unknown)",
+          "expected": "no item concluded 'not covered'; covers reported unknown",
+          "observed": "0 item(s) wrongly concluded not covered; statuses ['unknown']",
+          "pass": true
+        },
+        {
+          "perturbation": "qualifying words about the perpetrators",
+          "expected": "none in outbound insurer text",
+          "observed": "0 hit(s) in 0 email(s) \u2014 not exercised: the bench path does not run the graph's outbound step; covered by the gate suite below",
+          "pass": null
+        }
+      ],
+      "deadlines": {
+        "tasks": [
+          {
+            "kind": "police_report",
+            "due": "2026-10-19",
+            "source": "usual policy condition; file as soon as possible"
+          },
+          {
+            "kind": "declaration",
+            "due": "2026-11-16",
+            "source": "art. L113-2 4\u00b0 C. assur. (2 business days, theft); extended "
+          },
+          {
+            "kind": "loss_statement",
+            "due": "2026-11-16",
+            "source": "usual policy term (e.g. MMA 30 days); send 'subject to compl"
+          },
+          {
+            "kind": "replacement_value_top_up",
+            "due": "2028-09-16",
+            "source": "policy: replacement within 2 years for the depreciation top-"
+          },
+          {
+            "kind": "prescription_alert",
+            "due": "2028-07-18",
+            "source": "art. L114-1 C. assur. two-year limitation; alert 90 days bef"
+          },
+          {
+            "kind": "prescription",
+            "due": "2028-10-16",
+            "source": "art. L114-1 C. assur. (interrupted by registered letter on s"
+          },
+          {
+            "kind": "state_recourse",
+            "due": "2030-10-02",
+            "source": "art. L211-10 CSI \u2014 four-year limitation, prior claim to the "
+          }
+        ],
+        "all_sourced": true,
+        "count": 7
+      }
+    },
+    {
+      "id": "B",
+      "variants": [
+        {
+          "variant": "naive",
+          "eur_identified": 20900,
+          "recall": "4/8",
+          "recall_pct": 50,
+          "citations_correct": "0/0",
+          "citations_pct": null,
+          "untraceable_amounts": null,
+          "tokens": null,
+          "latency_ms": null,
+          "note": "declared from memory, no contract read"
+        },
+        {
+          "variant": "llm_only",
+          "note": "not run \u2014 OPENAI_API_KEY missing"
+        },
+        {
+          "variant": "agent",
+          "claim_id": "7f2e2c95-ebdc-46f3-90ea-0c9ce7ff8ba7",
+          "duplicates_detected": 0,
+          "item_metrics": {
+            "tp": 7,
+            "fp": 0,
+            "fn": 1,
+            "precision": 1.0,
+            "recall": 0.875,
+            "f1": 0.933,
+            "amount_mape": 0.321,
+            "amounts_within_10pct": "5/7",
+            "missed": [
+              "equipment"
+            ],
+            "spurious": []
+          },
+          "eur": {
+            "truth_eur": 57900,
+            "produced_eur": 53200,
+            "coverage_of_truth_pct": 92,
+            "over_declared_eur": 0,
+            "delta_vs_naive_eur": 32300
+          },
+          "eur_identified": 53200,
+          "recall": "7/8",
+          "recall_pct": 88,
+          "citations_correct": "7/7",
+          "citations_pct": 100,
+          "untraceable_amounts": 0,
+          "tokens": 0,
+          "latency_ms": 60,
+          "note": "7 items, 7 supported by evidence; deterministic pipeline only (no model key: narrative not structured)"
+        }
+      ],
+      "ablations": [
+        {
+          "ablation": "full",
+          "eur": 53200,
+          "recall": "7/8",
+          "f1": 0.933,
+          "citations": "7/7",
+          "untraceable": 0,
+          "mape": 0.321
+        },
+        {
+          "ablation": "no_coverage",
+          "eur": 53200,
+          "recall": "7/8",
+          "f1": 0.933,
+          "citations": "7/7",
+          "untraceable": 0,
+          "mape": 0.321
+        },
+        {
+          "ablation": "no_recompute",
+          "eur": 53200,
+          "recall": "7/8",
+          "f1": 0.933,
+          "citations": "7/7",
+          "untraceable": 0,
+          "mape": 0.321
+        },
+        {
+          "ablation": "no_evidence_items",
+          "eur": 18900,
+          "recall": "1/8",
+          "f1": 0.222,
+          "citations": "1/1",
+          "untraceable": 0,
+          "mape": 0.199
+        },
+        {
+          "ablation": "no_bi",
+          "eur": 34300,
+          "recall": "7/8",
+          "f1": 0.933,
+          "citations": "7/7",
+          "untraceable": 0,
+          "mape": 0.342
+        }
+      ],
+      "perturbations": [
+        {
+          "perturbation": "duplicate invoice",
+          "expected": "flagged as duplicate; \u20ac unchanged",
+          "observed": "1 duplicate(s); 53200 \u20ac vs 53200 \u20ac",
+          "pass": true
+        },
+        {
+          "perturbation": "policy schedule missing (all covers unknown)",
+          "expected": "no item concluded 'not covered'; covers reported unknown",
+          "observed": "0 item(s) wrongly concluded not covered; statuses ['unknown']",
+          "pass": true
+        },
+        {
+          "perturbation": "qualifying words about the perpetrators",
+          "expected": "none in outbound insurer text",
+          "observed": "0 hit(s) in 0 email(s) \u2014 not exercised: the bench path does not run the graph's outbound step; covered by the gate suite below",
+          "pass": null
+        }
+      ],
+      "deadlines": {
+        "tasks": [
+          {
+            "kind": "police_report",
+            "due": "2026-10-19",
+            "source": "usual policy condition; file as soon as possible"
+          },
+          {
+            "kind": "declaration",
+            "due": "2026-11-16",
+            "source": "art. L113-2 4\u00b0 C. assur. (5 business days); extended to 30 d"
+          },
+          {
+            "kind": "loss_statement",
+            "due": "2026-11-16",
+            "source": "usual policy term (e.g. MMA 30 days); send 'subject to compl"
+          },
+          {
+            "kind": "replacement_value_top_up",
+            "due": "2028-09-16",
+            "source": "policy: replacement within 2 years for the depreciation top-"
+          },
+          {
+            "kind": "prescription_alert",
+            "due": "2028-07-18",
+            "source": "art. L114-1 C. assur. two-year limitation; alert 90 days bef"
+          },
+          {
+            "kind": "prescription",
+            "due": "2028-10-16",
+            "source": "art. L114-1 C. assur. (interrupted by registered letter on s"
+          },
+          {
+            "kind": "state_recourse",
+            "due": "2030-10-02",
+            "source": "art. L211-10 CSI \u2014 four-year limitation, prior claim to the "
+          }
+        ],
+        "all_sourced": true,
+        "count": 7
+      }
+    },
+    {
+      "id": "C",
+      "variants": [
+        {
+          "variant": "naive",
+          "eur_identified": 135100,
+          "recall": "4/7",
+          "recall_pct": 57,
+          "citations_correct": "0/0",
+          "citations_pct": null,
+          "untraceable_amounts": null,
+          "tokens": null,
+          "latency_ms": null,
+          "note": "declared at retail price \u2014 exposure to forfeiture for false declaration"
+        },
+        {
+          "variant": "llm_only",
+          "note": "not run \u2014 OPENAI_API_KEY missing"
+        },
+        {
+          "variant": "agent",
+          "claim_id": "48339c94-6153-4cab-90b9-d891fb32811d",
+          "duplicates_detected": 0,
+          "item_metrics": {
+            "tp": 6,
+            "fp": 1,
+            "fn": 1,
+            "precision": 0.857,
+            "recall": 0.857,
+            "f1": 0.857,
+            "amount_mape": 0.041,
+            "amounts_within_10pct": "5/6",
+            "missed": [
+              "shopfront_glass"
+            ],
+            "spurious": [
+              "shutter"
+            ]
+          },
+          "eur": {
+            "truth_eur": 127200,
+            "produced_eur": 111600,
+            "coverage_of_truth_pct": 88,
+            "over_declared_eur": 0,
+            "delta_vs_naive_eur": -23500
+          },
+          "eur_identified": 111600,
+          "recall": "6/7",
+          "recall_pct": 86,
+          "citations_correct": "7/7",
+          "citations_pct": 100,
+          "untraceable_amounts": 0,
+          "tokens": 0,
+          "latency_ms": 64,
+          "note": "7 items, 7 supported by evidence; deterministic pipeline only (no model key: narrative not structured)"
+        }
+      ],
+      "ablations": [
+        {
+          "ablation": "full",
+          "eur": 111600,
+          "recall": "6/7",
+          "f1": 0.857,
+          "citations": "7/7",
+          "untraceable": 0,
+          "mape": 0.041
+        },
+        {
+          "ablation": "no_coverage",
+          "eur": 111600,
+          "recall": "6/7",
+          "f1": 0.857,
+          "citations": "7/7",
+          "untraceable": 0,
+          "mape": 0.041
+        },
+        {
+          "ablation": "no_recompute",
+          "eur": 111600,
+          "recall": "6/7",
+          "f1": 0.857,
+          "citations": "7/7",
+          "untraceable": 0,
+          "mape": 0.041
+        },
+        {
+          "ablation": "no_evidence_items",
+          "eur": 21000,
+          "recall": "1/7",
+          "f1": 0.25,
+          "citations": "1/1",
+          "untraceable": 0,
+          "mape": 0.028
+        },
+        {
+          "ablation": "no_bi",
+          "eur": 90600,
+          "recall": "6/7",
+          "f1": 0.857,
+          "citations": "7/7",
+          "untraceable": 0,
+          "mape": 0.043
+        }
+      ],
+      "perturbations": [
+        {
+          "perturbation": "duplicate invoice",
+          "expected": "flagged as duplicate; \u20ac unchanged",
+          "observed": "1 duplicate(s); 111600 \u20ac vs 111600 \u20ac",
+          "pass": true
+        },
+        {
+          "perturbation": "endorsement: theft cap 20 000 \u2192 40 000 \u20ac",
+          "expected": "the cap applied to the stock item follows the new schedule version",
+          "observed": "cap 20000.0 \u2192 40000.0 \u20ac; status capped \u2192 capped",
+          "pass": true
+        },
+        {
+          "perturbation": "policy schedule missing (all covers unknown)",
+          "expected": "no item concluded 'not covered'; covers reported unknown",
+          "observed": "0 item(s) wrongly concluded not covered; statuses ['unknown']",
+          "pass": true
+        },
+        {
+          "perturbation": "client states 120 000 \u20ac (retail)",
+          "expected": "stock from invoices at purchase price, not the stated figure",
+          "observed": "stock = 54000.0",
+          "pass": true
+        },
+        {
+          "perturbation": "qualifying words about the perpetrators",
+          "expected": "none in outbound insurer text",
+          "observed": "0 hit(s) in 0 email(s) \u2014 not exercised: the bench path does not run the graph's outbound step; covered by the gate suite below",
+          "pass": null
+        }
+      ],
+      "deadlines": {
+        "tasks": [
+          {
+            "kind": "police_report",
+            "due": "2026-10-19",
+            "source": "usual policy condition; file as soon as possible"
+          },
+          {
+            "kind": "declaration",
+            "due": "2026-11-16",
+            "source": "art. L113-2 4\u00b0 C. assur. (2 business days, theft); extended "
+          },
+          {
+            "kind": "loss_statement",
+            "due": "2026-11-16",
+            "source": "usual policy term (e.g. MMA 30 days); send 'subject to compl"
+          },
+          {
+            "kind": "replacement_value_top_up",
+            "due": "2028-09-16",
+            "source": "policy: replacement within 2 years for the depreciation top-"
+          },
+          {
+            "kind": "prescription_alert",
+            "due": "2028-07-18",
+            "source": "art. L114-1 C. assur. two-year limitation; alert 90 days bef"
+          },
+          {
+            "kind": "prescription",
+            "due": "2028-10-16",
+            "source": "art. L114-1 C. assur. (interrupted by registered letter on s"
+          },
+          {
+            "kind": "state_recourse",
+            "due": "2030-10-02",
+            "source": "art. L211-10 CSI \u2014 four-year limitation, prior claim to the "
+          }
+        ],
+        "all_sourced": true,
+        "count": 7
+      }
+    }
+  ]
+}

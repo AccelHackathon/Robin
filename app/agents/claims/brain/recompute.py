@@ -48,7 +48,7 @@ def select_document_amount(rows: list[dict[str, Any]], vat_recoverable: bool | N
 
 # Bilingual cues per catalog key so a French quote ("rideau métallique") finds the English-labelled item ("Metal shutter").
 CUES: dict[str, set[str]] = {
-    "stock": {"stock", "marchandise", "smartphone", "téléphone", "telephone", "phone", "article", "produit", "monture", "lunette", "appareil"},
+    "stock": {"stock", "marchandise", "matières premières", "matiere", "production", "denrées", "smartphone", "téléphone", "telephone", "phone", "article", "produit", "monture", "lunette", "appareil"},
     "spare_parts": {"pièce", "piece", "accessoire", "accessory", "part", "écran", "batterie"},
     "equipment": {"matériel", "equipment", "machine", "station", "microscope", "caisse", "till", "ordinateur", "computer", "tpe", "four", "vitrine réfrigérée"},
     "shutter": {"rideau", "volet", "shutter", "grille"},
