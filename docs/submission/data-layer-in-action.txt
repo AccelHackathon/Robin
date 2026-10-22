@@ -1,0 +1,37 @@
+THE DATA LAYER IN ACTION
+
+Robin is a data-centric agentic system for French small businesses hit by a loss (riots, theft, storm). Four LangGraph agents share one Aiven PostgreSQL database that is simultaneously the source of truth, the event bus and the agent memory. Nothing an agent says can be traced to anything but a row in that database.
+
+1. SOURCES (WHAT COMES IN)
+
+- 12 real public general-conditions contracts from French insurers (MAAF, AXA x2, Generali, Allianz, MMA, Hiscox x3, Sogessur, Groupama, Pacifica), split into 1,659 page-anchored clauses indexed with PostgreSQL full-text search (French dictionary). Every statement about a cover carries a clause_id and a page number.
+- The client's own documents (policy schedule, endorsements, invoices, photos, police report) via web upload, Telegram or email attachments, each hashed (sha256) for deduplication and read with gpt-4o vision.
+- Live external events via Keenable realtime web search, bounded to the last 48 hours: prefecture orders, protest routes, Meteo-France vigilance, riots, insurer and government measures.
+- Insurer answers by email (AgentMail webhooks) and by phone (ElevenLabs post-call webhooks, HMAC-verified), stored with provenance "insurer_oral / to_confirm" so an oral answer never overwrites the contract.
+
+2. STORAGE (WHERE IT LIVES) - AIVEN POSTGRESQL, 39 TABLES, 11 ADDITIVE MIGRATIONS
+
+- Contract knowledge: documents, clauses, versioned coverage_profile (subscribed = yes | no | unknown, never inferred from a missing page), contract_levers, deadline_rules.
+- Claim memory: claims, facts (source, confidence, supersedes - corrections never overwrite), evidence (duplicate_of), loss_items (each euro linked to evidence + clause + page + formula), offers, payments.
+- Monitoring: risk_profiles, watch_queries, alerts, alert_sources, sentinel_sweeps.
+- Execution state: LangGraph Postgres checkpointer (one thread per claim, interrupt() while waiting for the client, the insurer or a call), the events queue consumed with SELECT ... FOR UPDATE SKIP LOCKED, and actions recording every tool call with tokens, latency and cost.
+
+3. FLOW (HOW IT MOVES)
+
+Onboarding -> Intake Agent extracts the coverage profile with page citations -> a DB trigger fans out events -> the Risk Sentinel derives a risk profile (city, department, covers, prevention conditions, deadlines) and starts sweeping every 15 minutes: Keenable search -> gpt-4o triage and assessment -> fingerprint deduplication -> alert composed only from policy facts and sourced URLs -> review gate (8 deterministic controls: every amount traceable, every citation verified against the clause text, banned words, no advice) -> Telegram.
+
+When a loss is declared, the Claims Agent resumes its thread from the checkpointer, reads the same memory, declares the loss by email the same day, requests evidence, calls the insurer, and attaches the Sentinel's alerts as third-party evidence of the external event. The simulated insurer (labelled as such) answers by email with an offer and a "solde de tout compte" release that the agent detects before handing the decision back to the client.
+
+4. DATA AT THE CORE, NOT DECORATION
+
+Freshness (48-hour search window, oral answers provisional until written), grounding (page-cited clauses, verified quotes), memory (versioned facts, durable threads surviving restarts), scale (full corpus searchable per insurer), auditability (every action, cost and review decision logged). Remove the data layer and the agents cannot speak: the review gate blocks any euro or claim that is not in the database.
+
+
+ONE-LINE PITCH
+
+Robin is an autonomous claims agent for small businesses: it reads your policy clause by clause, watches the risks around your shop, and runs your insurance claim end to end - every euro traced to a document, every decision left to you.
+
+
+DEMO LINK
+
+https://01a16307-94d9-76dc-b2cf-1a5228d5463a-8080.eur-1.aiven.app
