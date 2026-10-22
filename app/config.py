@@ -16,6 +16,7 @@ class Settings(BaseSettings):
     agentmail_api_key: str | None = None
     agentmail_webhook_secret: str | None = None          # whsec_... from the webhook endpoint
     agentmail_domain: str = "agentmail.to"
+    agentmail_shared_inbox: str = "robin-agent@agentmail.to"   # fallback when the plan's inbox limit is reached
     simulated_insurer_email: str | None = None           # mailbox with role simulated_insurer
 
     # Workstream A — voice (ElevenLabs Agents + Twilio)
