@@ -18,7 +18,7 @@ Everything in the repo is in English: code, comments, docs, commit messages, pro
 
 ## Stack
 
-Python 3.12, FastAPI, psycopg 3 (async pool), LangGraph + `langgraph-checkpoint-postgres`, `langchain-anthropic`, `python-telegram-bot`, Jinja2. Single service: HTTP + webhooks + in-process worker. Aiven PostgreSQL 18 (`max_connections = 15`: keep pools small). Deployed on Aiven Runtime.
+Python 3.12, FastAPI, psycopg 3 (async pool), LangGraph + `langgraph-checkpoint-postgres`, `langchain-openai`, `python-telegram-bot`, Jinja2. Single service: HTTP + webhooks + in-process worker. Aiven PostgreSQL 18 (`max_connections = 15`: keep pools small). Deployed on Aiven Runtime.
 
 ## Run locally
 

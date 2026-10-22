@@ -1,7 +1,6 @@
 """Model-backed steps of the Claims Agent, isolated so the rest of the graph stays deterministic.
 
-Provider: Anthropic if `ANTHROPIC_API_KEY` is set, else OpenAI (`OPENAI_API_KEY` — already on
-Runtime), else no model (callers degrade gracefully). Every call records tokens and latency in
+Provider: OpenAI (`OPENAI_API_KEY`, see `app.llm`); without a key callers degrade gracefully. Every call records tokens and latency in
 `actions`. Document extractions are cached by (sha256, task) so the benchmark is cheap.
 """
 
@@ -18,32 +17,18 @@ from langchain_core.messages import HumanMessage, SystemMessage
 from app import db
 from app.agents.audit import record_action
 from app.config import settings
+from app.llm import chat_model, llm_available
 
 log = logging.getLogger(__name__)
 
-ANTHROPIC_MODEL = "claude-sonnet-4-5"
-OPENAI_MODEL = "gpt-4o"
-
-
 def provider() -> str | None:
-    if settings.anthropic_api_key:
-        return "anthropic"
-    if settings.openai_api_key:
-        return "openai"
-    return None
+    return "openai" if llm_available() else None
 
 
 def get_model(*, temperature: float = 0.0):
-    p = provider()
-    if p == "anthropic":
-        from langchain_anthropic import ChatAnthropic
-
-        return ChatAnthropic(model=ANTHROPIC_MODEL, api_key=settings.anthropic_api_key, temperature=temperature, max_tokens=4096), ANTHROPIC_MODEL
-    if p == "openai":
-        from langchain_openai import ChatOpenAI
-
-        return ChatOpenAI(model=OPENAI_MODEL, api_key=settings.openai_api_key, temperature=temperature, max_tokens=4096), OPENAI_MODEL
-    raise RuntimeError("no model configured (set ANTHROPIC_API_KEY or OPENAI_API_KEY)")
+    if not llm_available():
+        raise RuntimeError("no model configured (set OPENAI_API_KEY)")
+    return chat_model(temperature=temperature, max_tokens=4096), settings.openai_model
 
 
 def _usage(msg) -> tuple[int | None, int | None]:

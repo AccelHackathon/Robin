@@ -1,7 +1,7 @@
 """Review gate (PRD 2.7). Every outbound text passes here before leaving the system.
 
 Deterministic controls run first and are authoritative. The LLM judge (control 6 nuance and
-rewrites) is layered on top in `judge.py` when an Anthropic key is configured; without it the
+rewrites) is layered on top in `judge.py` when an OpenAI key is configured; without it the
 gate is still safe because the regex controls block the unambiguous cases.
 
 Controls:

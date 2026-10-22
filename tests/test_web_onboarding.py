@@ -28,12 +28,12 @@ def client():
     previous = (
         settings.database_url,
         settings.worker_enabled,
-        settings.anthropic_api_key,
+        settings.openai_api_key,
         settings.telegram_bot_username,
     )
     settings.database_url = url
     settings.worker_enabled = False
-    settings.anthropic_api_key = None
+    settings.openai_api_key = None
     settings.telegram_bot_username = "RobinTestBot"
     with TestClient(app) as c:
         c.portal.call(load_corpus)
@@ -41,7 +41,7 @@ def client():
     (
         settings.database_url,
         settings.worker_enabled,
-        settings.anthropic_api_key,
+        settings.openai_api_key,
         settings.telegram_bot_username,
     ) = previous
 
@@ -399,8 +399,8 @@ def test_model_citation_and_amount_validation(client, monkeypatch):
 
             return SimpleNamespace(content=json.dumps(result), usage_metadata={})
 
-    monkeypatch.setattr(module, "ChatAnthropic", Model)
-    monkeypatch.setattr(settings, "anthropic_api_key", "fake-test-key")
+    monkeypatch.setattr(module, "chat_model", lambda **kwargs: Model(**kwargs))
+    monkeypatch.setattr(settings, "openai_api_key", "fake-test-key")
     with pytest.raises(ValueError, match="amount"):
         c.portal.call(
             module.extract_fact,

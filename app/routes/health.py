@@ -14,7 +14,6 @@ async def health():
         "db": "ok" if db_ok else "unavailable",
         "commit": settings.git_commit,
         "integrations": {
-            "anthropic": bool(settings.anthropic_api_key),
             "openai": bool(settings.openai_api_key),
             "telegram": bool(settings.telegram_bot_token),
             "agentmail": bool(settings.agentmail_api_key),

@@ -18,7 +18,7 @@
 
 - Local PostgreSQL: 12 corpus documents / 1,655 verbatim page-local clauses; idempotent ingestion verified. Production load pending Runtime access.
 - Web routes, durable sessions, Argon2 passwords (PRD section 9 takes precedence over B5 bcrypt), upload validation, consent records, link renewal, and coverage polling implemented.
-- Six-node Intake graph implemented; deterministic synthetic-fixture extraction tested. Real model execution requires `ANTHROPIC_API_KEY`; absent keys produce explicitly partial results and unknown subscriptions.
+- Six-node Intake graph implemented; deterministic synthetic-fixture extraction tested. Real model execution uses OpenAI (`OPENAI_API_KEY`, set on Runtime); without a key the graph produces explicitly partial results and unknown subscriptions.
 - Shared additions: `TELEGRAM_BOT_USERNAME`, `SESSION_SECRET`, `INTAKE_MODEL` settings; Argon2 and ReportLab dependencies. No changes to main, worker, or shared types.
 - Integration: migration 200 fans out `web/onboarding_done` into `web/document_added` transactionally. A keeps the mailbox handler; B consumes the latter event.
 - C handoff: `onboarding.welcome_brief` is an unsent draft (review before sending); `deadline_rules.rule.status` distinguishes extracted vs to_confirm; `coverage_profile.subscribed` remains SQL boolean/NULL, serialized yes/no/unknown on the web. Private search/quote verification requires `account_id=`.
@@ -65,7 +65,7 @@ Triggered by `("web", "onboarding_done")` and `("web", "document_added")` — re
 5. `list_missing_documents` — tasks for the client (no particular conditions → "Could you upload the policy schedule showing your selected cover?").
 6. `write_welcome_brief` — English summary used by C's welcome message: covers, caps, deductibles, with page references.
 
-Model: Claude via `langchain-anthropic` (needs `ANTHROPIC_API_KEY`; until it is set, `OPENAI_API_KEY` is available as a stopgap through `langchain-openai` — add the dependency if you use it). Cache extractions by `(sha256, guarantee)` in a small table (2xx) to keep the benchmark cheap.
+Model: OpenAI `gpt-4o` through `app.llm.chat_model()` (`OPENAI_API_KEY`); no other provider. Cache extractions by `(sha256, guarantee)` in a small table (2xx) to keep the benchmark cheap.
 
 ### B5. Onboarding site (`app/web/`, Jinja2 + Tailwind CDN, server-rendered)
 
@@ -91,4 +91,4 @@ Model: Claude via `langchain-anthropic` (needs `ANTHROPIC_API_KEY`; until it is 
 
 ## Config you own
 
-`TELEGRAM_BOT_USERNAME`, `SESSION_SECRET`, `ANTHROPIC_API_KEY` (ask Emile to set it on Runtime once obtained).
+`TELEGRAM_BOT_USERNAME`, `SESSION_SECRET`.

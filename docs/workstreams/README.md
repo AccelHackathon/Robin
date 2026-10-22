@@ -14,7 +14,7 @@ Product spec: `docs/prd/2026-10-22-robin-claims-agent/PRD.md` (authoritative). C
 - Schema: migrations `001` + `002` (26 tables aligned with PRD §3.4).
 - Shared types: `app/contracts.py` (PRD §5). Tool contract: `app/agents/claims/tools.py`. Audit helper: `app/agents/audit.py`.
 - Routers and handler modules for every stream are **already registered in `app/main.py`** (empty). You fill your own files; you never edit `main.py`.
-- Production: Aiven Runtime app `robin` + PostgreSQL `pg-3f9bc500`, `/health` returns `db: ok`. Secrets set: `AGENTMAIL_API_KEY`, `ELEVENLABS_API_KEY`, `OPENAI_API_KEY`. Missing: `ANTHROPIC_API_KEY`, `TELEGRAM_BOT_TOKEN`.
+- Production: Aiven Runtime app `robin` + PostgreSQL `pg-3f9bc500`, `/health` returns `db: ok`. Secrets set: `AGENTMAIL_API_KEY`, `ELEVENLABS_API_KEY`, `OPENAI_API_KEY` (the only LLM provider; see `app/llm.py`). Missing: `TELEGRAM_BOT_TOKEN`.
 - Voice test passed: Twilio number `+1 573 538 3826` imported in ElevenLabs (`phnum_0301m5hhx7rvfv7rftfxav8hc6ts`), test agent `agent_1101m5hj0xtfftsa51r6tr0g3wjy`, outbound call reaches the verified phone. Twilio trial plays "press any key" before connecting.
 
 ## Git rules (the whole point is not stepping on each other)

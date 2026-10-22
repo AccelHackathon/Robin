@@ -14,7 +14,7 @@ uv pip install --python .venv/bin/python -r pyproject.toml pytest pytest-asyncio
 
 Migrations run at startup. The corpus CLI is idempotent and loads all 12 public documents (including the two IPIDs; they are not mislabelled as general conditions), 1,655 clauses. Clause bodies are verbatim, page-local text slices. Public corpus clauses have `account_id = NULL`; client documents always belong to their account.
 
-Settings: `DATABASE_URL`, `ANTHROPIC_API_KEY`, `INTAKE_MODEL` (default `claude-sonnet-4-6`), `TELEGRAM_BOT_USERNAME`, `PUBLIC_BASE_URL`. Production must use HTTPS (`PUBLIC_BASE_URL=https://…`) so session cookies are Secure. Sessions are random opaque values stored only as hashes; no signing secret is needed. Passwords use Argon2, following the authoritative PRD section 9.
+Settings: `DATABASE_URL`, `OPENAI_API_KEY`, `INTAKE_MODEL` (default `gpt-4o`), `TELEGRAM_BOT_USERNAME`, `PUBLIC_BASE_URL`. Production must use HTTPS (`PUBLIC_BASE_URL=https://…`) so session cookies are Secure. Sessions are random opaque values stored only as hashes; no signing secret is needed. Passwords use Argon2, following the authoritative PRD section 9.
 
 Without the model key, ingestion, uploads and onboarding still work. Candidate coverage stays `unknown` / low confidence. Only the explicitly labelled synthetic Karim schedule uses a deterministic fixture parser. No outbound messages are sent by B and no model result is fabricated. HEIC originals are accepted and retained; they currently require a PDF/JPG/PNG replacement for reading. Image OCR uses Claude when available.
 
@@ -38,7 +38,7 @@ Without the model key, ingestion, uploads and onboarding still work. Candidate c
 ROBIN_TEST_DATABASE_URL=postgresql://…/robin_b_tests .venv/bin/python -m pytest tests/
 ```
 
-Tests use a dedicated database and never send to external providers. They cover page preservation, citation/amount checks, session invalidation, CSRF, upload validation/deduplication, account isolation, missing-schedule unknowns, mandate idempotence, event fan-out, link expiry, urgent routing and endorsement versioning. Real Anthropic/Telegram/AgentMail execution and production loading are separate integration checks requiring the team's configuration.
+Tests use a dedicated database and never send to external providers. They cover page preservation, citation/amount checks, session invalidation, CSRF, upload validation/deduplication, account isolation, missing-schedule unknowns, mandate idempotence, event fan-out, link expiry, urgent routing and endorsement versioning. Real OpenAI/Telegram/AgentMail execution and production loading are separate integration checks requiring the team's configuration.
 
 ## Important scope details
 

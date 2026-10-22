@@ -84,4 +84,4 @@ AC-3, AC-4, AC-5 (≥ 90 % of case A items with evidence + clause + page), AC-7 
 
 ## Config you own
 
-`TELEGRAM_BOT_TOKEN`, `TELEGRAM_MODE` (`polling|webhook`), `PUBLIC_BASE_URL`, `ANTHROPIC_API_KEY` (shared with B).
+`TELEGRAM_BOT_TOKEN`, `TELEGRAM_MODE` (`polling|webhook`), `PUBLIC_BASE_URL`.

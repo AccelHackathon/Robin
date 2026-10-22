@@ -17,7 +17,7 @@
 - [x] `POST /internal/calls` (bearer `INTERNAL_API_TOKEN`) to start a call on a claim during rehearsals; demo claim `800cdd2d-7130-4722-a804-d6afdf1817d4` (account `demo-karim@robin.local`) exists in production
 - [ ] Optional: one real "let it ring" call to watch the `voicemail_or_no_answer` path
 
-Integration notes for the merge: `call_ended` payload = `{call_id, transcript, structured_result{reached_human, answers[{question_index, answered, answer_summary, answer_verbatim, rationale, confidence}], insurer_reference, documents_requested, summary}, status, finalized_by}`; `email_received` payload carries `mailbox_role` (`agent` → C, `simulated_insurer` → A). Secrets on Runtime: all of stream A's are set; still missing globally: `ANTHROPIC_API_KEY`, `TELEGRAM_BOT_TOKEN`.
+Integration notes for the merge: `call_ended` payload = `{call_id, transcript, structured_result{reached_human, answers[{question_index, answered, answer_summary, answer_verbatim, rationale, confidence}], insurer_reference, documents_requested, summary}, status, finalized_by}`; `email_received` payload carries `mailbox_role` (`agent` → C, `simulated_insurer` → A). Secrets on Runtime: all of stream A's are set; still missing globally: `TELEGRAM_BOT_TOKEN`. LLM provider is OpenAI only (`app/llm.py`).
 
 ## Owned paths
 

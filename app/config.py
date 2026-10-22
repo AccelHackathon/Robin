@@ -8,8 +8,8 @@ class Settings(BaseSettings):
     git_commit: str = "unknown"
     log_level: str = "INFO"
 
-    anthropic_api_key: str | None = None
-    openai_api_key: str | None = None
+    openai_api_key: str | None = None                    # the only LLM provider used by the project
+    openai_model: str = "gpt-4o"
     telegram_bot_token: str | None = None
 
     # Workstream A — email (AgentMail)
@@ -34,7 +34,7 @@ class Settings(BaseSettings):
     telegram_mode: str = "polling"            # polling | webhook  (C)
     telegram_bot_username: str | None = None  # B's deep link
     session_secret: str | None = None
-    intake_model: str = "claude-sonnet-4-6"
+    intake_model: str = "gpt-4o"
     worker_enabled: bool = True
     worker_poll_seconds: float = 1.0
 
