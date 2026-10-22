@@ -73,22 +73,64 @@ def ack_document(analysis: dict[str, Any], memory: dict[str, Any]) -> Draft:
     else:
         n = len(analysis.get("new_evidence", []))
         body = f"Received and filed ({n} item{'s' if n != 1 else ''}). " + _still_needed(memory)
+        cl = _cover_lines(memory)
+        if cl:
+            body += "\nHow this maps to your policy so far:\n" + "\n".join(cl)
     return Draft(channel="telegram", language="en", recipient_role="client", to=None, subject=None, body=body, attachment_ids=[],
                  amounts_eur=[], loss_item_ids=[], quotes=[], fact_ids_used=[], purpose="ask_client", requested_items=[], next_wait="awaiting_client")
 
 
-def ack_message(memory: dict[str, Any]) -> Draft:
+def ack_message(memory: dict[str, Any], analysis: dict[str, Any] | None = None) -> Draft:
     body = "Noted and added to your file. " + _still_needed(memory)
+    created = (analysis or {}).get("items_created") or []
+    if created:
+        labels = [li["label"] for li in memory.get("loss_items", []) if str(li["id"]) in set(created)]
+        if labels:
+            body += "\nI have added to your loss statement, pending supporting documents: " + ", ".join(labels) + "."
+    cl = _cover_lines(memory)
+    if cl:
+        body += "\nHow this maps to your policy so far:\n" + "\n".join(cl)
     return Draft(channel="telegram", language="en", recipient_role="client", to=None, subject=None, body=body, attachment_ids=[],
                  amounts_eur=[], loss_item_ids=[], quotes=[], fact_ids_used=[], purpose="ask_client", requested_items=[], next_wait="awaiting_client")
 
 
 def _still_needed(memory: dict[str, Any]) -> str:
-    have = {e.get("evidence_type") for e in memory.get("evidence", [])}
+    """Reads the digest: never re-list what is already on file; say how long an ask has been open."""
+    have = {e.get("evidence_type") for e in memory.get("evidence", []) if not e.get("duplicate_of")}
+    digest = memory.get("digest") or {}
+    open_asks = [a for a in (digest.get("open_asks") or []) if not a.get("satisfied_at")]
     wanted = [("police_report", "the police complaint receipt"), ("invoice", "supplier invoices"), ("inventory", "your last inventory"),
               ("photo", "photos of the damage")]
     missing = [label for key, label in wanted if key not in have]
-    return ("Still useful: " + ", ".join(missing) + ".") if missing else "Your file has the core documents; I am preparing the loss statement."
+    # BI inputs become an ask only once the BI item exists (cover subscribed) and is still unsupported.
+    if any(li.get("catalog_key") == "business_interruption" and li.get("status") == "unsupported" for li in memory.get("loss_items", [])):
+        missing.append("monthly turnover N-1/N-2 and your gross margin rate (your accountant can export these)")
+    if not missing:
+        return "Your file has the core documents; I am preparing the loss statement."
+    reminders = {a["item"].lower(): a for a in open_asks}
+    parts = []
+    for label in missing:
+        prior = next((a for k, a in reminders.items() if any(w in k for w in label.lower().split()[:2])), None)
+        parts.append(f"{label} (asked {prior['times']}× since {prior['asked_at'][:10]})" if prior and prior.get("times", 1) > 1 else label)
+    return "Still useful: " + "; ".join(parts) + "."
+
+
+def _cover_lines(memory: dict[str, Any]) -> list[str]:
+    """Factual lines about how the current items map to the policy — caps and gaps, with pages."""
+    lines = []
+    for li in memory.get("loss_items", []):
+        cov = ((li.get("computation_detail") or {}).get("cover") or {})
+        st = cov.get("status")
+        page = f" (p. {cov['page']})" if cov.get("page") else ""
+        if st == "capped":
+            lines.append(f"• {li['label']}: exceeds the {cov.get('cap')} cap of the {cov.get('guarantee', '').replace('_', ' ')} cover{page}.")
+        elif st == "no_cover_found":
+            lines.append(f"• {li['label']}: no matching cover found in your policy documents — {cov.get('note')}.")
+        elif st == "unknown":
+            lines.append(f"• {li['label']}: cover not established yet — {cov.get('note')}.")
+        elif st == "not_insurance":
+            lines.append(f"• {li['label']}: not an insurance cover; {cov.get('note')}.")
+    return lines[:6]
 
 
 def confirmation_request_email(memory: dict[str, Any], claim_id: str, fact_ids: list[str]) -> Draft:
@@ -143,6 +185,17 @@ def offer_summary(memory: dict[str, Any], analysis: dict[str, Any]) -> Draft:
     if release:
         parts.append("The documents include release language (" + ", ".join(release) + "). Signing such a document extinguishes further claims on this loss "
                      "(art. 2052 C. civ.); for business property there is no withdrawal period after signature.")
+    cl = _cover_lines(memory)
+    if cl:
+        parts.append("Items in your statement and the policy:\n" + "\n".join(cl))
+    from app.agents.claims.brain import positions as P, profiles as PR
+
+    for oral, written in P.contradictions((memory.get("digest") or {}).get("insurer_positions") or []):
+        amounts_text = f"On {oral['at'][:10]} by phone the insurer stated: « {oral['position_verbatim'][:140]} ». In writing on {written['at'][:10]}: « {written['position_verbatim'][:140]} »."
+        parts.append(amounts_text)
+    obs = PR.describe(memory.get("insurer_profile"))
+    if obs:
+        parts.append(obs)
     parts.append("You can accept, ask for details, or contest. Options that exist: a written complaint to the insurer, the insurance ombudsman (if eligible), "
                  "a loss assessor of your choice, a lawyer. Nothing is accepted unless you tell me to.")
     return Draft(channel="telegram", language="en", recipient_role="client", to=None, subject=None, body="\n".join(parts), attachment_ids=[],
@@ -176,7 +229,7 @@ async def build_drafts(state: dict[str, Any]) -> list[Draft]:
     elif kind == "document":
         drafts.append(ack_document(analysis, memory))
     elif kind == "message":
-        drafts.append(ack_message(memory))
+        drafts.append(ack_message(memory, analysis))
     elif kind == "call_ended":
         ids = analysis.get("new_fact_ids", [])
         if ids:

@@ -81,8 +81,15 @@ async def get_claim_memory(claim_id: str) -> dict[str, Any]:
         )
         catalog = await _rows(conn, "SELECT * FROM loss_catalog ORDER BY category, key", ())
         riot = await _one(conn, "SELECT * FROM riot_events WHERE id = %s", (claim["riot_event_id"],)) if claim.get("riot_event_id") else None
+        digest = await _one(conn, "SELECT * FROM claim_digest WHERE claim_id = %s", (claim_id,))
+
+    from app.agents.claims.brain import profiles  # local import: brain depends on memory
+
+    insurer_profile = await profiles.get((business or {}).get("insurer_name"))
 
     return {
+        "digest": digest or {"narrative": None, "open_asks": [], "insurer_positions": [], "next_steps": [], "turn_count": 0},
+        "insurer_profile": insurer_profile,
         "claim": claim, "account_id": acct, "business": business, "mandate": mandate, "contracts": contracts,
         "coverage": coverage, "levers": levers, "facts": facts, "evidence": evidence, "loss_items": loss_items,
         "communications": communications, "actions": actions, "deadlines": deadlines, "offers": offers,

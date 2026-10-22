@@ -119,6 +119,19 @@ async def dispatch(state: ClaimState) -> dict[str, Any]:
     return {"wait_type": wait_type, "trace": state.get("trace", []) + [f"dispatch: sent {len(state.get('drafts', []))}, now {wait_type}"]}
 
 
+async def reflect(state: ClaimState) -> dict[str, Any]:
+    """Update the running digest after the turn: open asks, satisfied asks, next steps, narrative."""
+    from app.agents.claims.brain import digest as D
+
+    try:
+        d = await D.update_after_turn(state["claim_id"], await T.get_claim_memory(state["claim_id"]), state.get("drafts", []), state.get("analysis", {}) or {})
+        note = f"reflect: digest turn {d.get('turn_count')}, {len(D.open_asks(d))} open ask(s)"
+    except Exception as exc:  # the digest must never break the flow
+        log.exception("reflect failed")
+        note = f"reflect: failed ({exc!r})"
+    return {"trace": state.get("trace", []) + [note]}
+
+
 async def wait(state: ClaimState) -> dict[str, Any]:
     wait_type = state.get("wait_type") or "awaiting_client"
     async with db.pool.connection() as conn:
@@ -147,6 +160,7 @@ def build() -> StateGraph:
     g.add_node("act", act)
     g.add_node("review", review)
     g.add_node("dispatch", dispatch)
+    g.add_node("reflect", reflect)
     g.add_node("wait", wait)
     g.add_edge(START, "load_memory")
     g.add_edge("load_memory", "triage")
@@ -154,7 +168,8 @@ def build() -> StateGraph:
     g.add_edge("analyze", "act")
     g.add_edge("act", "review")
     g.add_conditional_edges("review", _after_review, {"act": "act", "dispatch": "dispatch"})
-    g.add_edge("dispatch", "wait")
+    g.add_edge("dispatch", "reflect")
+    g.add_edge("reflect", "wait")
     g.add_edge("wait", "load_memory")
     return g
 
