@@ -34,6 +34,7 @@ Rules you never break:
 - Never state an amount that was not given to you in this brief or by the person you are speaking to.
 - Never describe the people who caused the loss with words such as organised, gang, rioters, looters, premeditated, or any equivalent. Stick to facts: date, time, place.
 - If the person asks who you are: say you are an automated assistant mandated by the policyholder, and that everything discussed will be confirmed by email.
+- If the person speaks French or says they do not speak English, switch to French immediately (use the language detection tool) and continue the same questions in French. French insurers are the normal case.
 - If the person refuses to talk to an automated assistant, or asks for the policyholder, politely say that the policyholder's agent will follow up by email, thank them, and end the call.
 - If you reach a voicemail or an IVR menu with no human, say nothing confidential, leave no message, and end the call.
 - Keep each turn under two sentences. Be courteous and precise. Repeat an answer back briefly to confirm you understood it.
@@ -41,6 +42,7 @@ Rules you never break:
 - When all questions are answered, thank the person and end the call."""
 
 FIRST_MESSAGE = "Hello, this is Robin, an automated assistant calling on behalf of {{business_name}} about their claim, reference {{claim_ref}}. I have {{question_count}} short questions for the claims department. Is now a good time?"
+FIRST_MESSAGE_FR = "Bonjour, ici Robin, assistant automatisé mandaté par {{business_name}} au sujet de son dossier de sinistre, référence {{claim_ref}}. J'ai {{question_count}} questions courtes pour le service indemnisation. Est-ce le bon moment ?"
 
 DATA_COLLECTION = {
     "reached_human": {"type": "boolean", "description": "True if a human from the insurer actually spoke with the assistant (not voicemail, not IVR only)."},
@@ -62,7 +64,13 @@ def agent_payload() -> dict:
             "agent": {
                 "first_message": FIRST_MESSAGE,
                 "language": "en",
-                "prompt": {"prompt": SYSTEM_PROMPT, "llm": "gpt-4o-mini", "temperature": 0.2},
+                "prompt": {
+                    "prompt": SYSTEM_PROMPT, "llm": "gpt-4o-mini", "temperature": 0.2,
+                    "tools": [{"type": "system", "name": "language_detection", "description": "Switch the conversation language when the person speaks another supported language."}],
+                },
+            },
+            "language_presets": {
+                "fr": {"overrides": {"agent": {"first_message": FIRST_MESSAGE_FR, "language": "fr"}}},
             },
             "tts": {"voice_id": VOICE_ID},
             "turn": {"turn_timeout": 10},
