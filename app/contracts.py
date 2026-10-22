@@ -141,6 +141,10 @@ class ReviewContext(BaseModel):
     client_instruction_amounts_eur: list[float]
     confirmed_fact_ids: list[str]
     cited_clause_ids: list[int]
+    # Additive (C): what the draft actually relies on, so the gate can verify it.
+    loss_item_ids: list[str] = Field(default_factory=list)       # loss items referenced by the draft
+    quotes: list[tuple[int, str]] = Field(default_factory=list)  # (clause_id, verbatim quote) pairs used
+    fact_ids_used: list[str] = Field(default_factory=list)       # facts the draft states
 
 
 class ReviewViolation(BaseModel):
