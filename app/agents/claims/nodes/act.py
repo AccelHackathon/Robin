@@ -82,7 +82,10 @@ def ack_document(analysis: dict[str, Any], memory: dict[str, Any]) -> Draft:
         body = "I already have this document on file — I have not counted it twice. Anything else you can send?"
     else:
         n = len(analysis.get("new_evidence", []))
-        body = f"Received and filed ({n} item{'s' if n != 1 else ''}). " + _still_needed(memory)
+        body = f"Received and filed ({n} item{'s' if n != 1 else ''}). "
+        for r in analysis.get("items_recomputed", []):
+            body += f"Your statement now shows {r['label']} at {r['amount_eur']:,.2f} € from the invoice(s), at purchase price (v{r['version']}). ".replace(",", " ")
+        body += _still_needed(memory)
         cl = _cover_lines(memory)
         if cl:
             body += "\nHow this maps to your policy so far:\n" + "\n".join(cl)

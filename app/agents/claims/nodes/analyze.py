@@ -190,6 +190,14 @@ async def run(state: dict[str, Any]) -> dict[str, Any]:
                                            vendor=None, description=p.get("caption") or doc.get("filename"), extracted=extract, sha256=doc.get("sha256"))
                 (out["duplicates"] if row.get("duplicate_of") else out["new_evidence"]).append(str(row["id"]))
             out["summary"] = f"document {doc.get('filename') or doc['id']}: {len(out['new_evidence'])} evidence, {len(out['duplicates'])} duplicate(s)"
+            if out["new_evidence"]:
+                from app.agents.claims.brain import recompute
+
+                fresh = await T.get_claim_memory(claim_id)
+                rows = await recompute.recompute_from_evidence(claim_id, fresh, out["new_evidence"])
+                if rows:
+                    out["items_recomputed"] = [{"id": str(r["id"]), "label": r["label"], "amount_eur": float(r["amount_claimed_eur"]), "version": r["version"]} for r in rows]
+                    out["summary"] += f"; {len(rows)} item(s) recomputed from invoices"
         else:
             out["summary"] = "document event without a stored document"
 
