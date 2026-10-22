@@ -2,6 +2,10 @@
 
 PRD: `PRD.md` (same folder). Updated: 2026-10-22.
 
+> **Work split:** the PRD is executed as three parallel workstreams — see `docs/workstreams/README.md` (rules, interfaces) and `A-voice-and-insurer.md`, `B-onboarding-and-intake.md`, `C-claims-agent-and-telegram.md`. Each owner keeps the Status block of their file current; this file only tracks blockers and acceptance criteria.
+>
+> **Done since the PRD was written:** B1 closed (GitHub linked, app `robin` deployed on Runtime, PG wired, `/health` → `db: ok`, 26 tables). B2 partly closed (Twilio trial number imported in ElevenLabs, outbound test call reaches the verified phone). Task 1 of the H0 list is complete.
+
 ## Current phase
 
 - [ ] H0 — hackathon demo (pitch 4 pm, results 5 pm)
@@ -12,17 +16,17 @@ PRD: `PRD.md` (same folder). Updated: 2026-10-22.
 
 | # | Blocker | Impact | Owner | State |
 |---|---|---|---|---|
-| B1 | Aiven organisation admin role for GitHub → Runtime link | H0 deployment | ? | **Open** |
-| B2 | ElevenLabs credits + verified Twilio number | Step 8 (degradable) | ? | Open |
+| B1 | Aiven organisation admin role for GitHub → Runtime link | H0 deployment | Emile | **Closed** — deployed |
+| B2 | ElevenLabs credits + verified Twilio number | Step 8 (degradable) | Emile | Closed — number imported, test call OK |
 | B3 | Benchmark contracts B/C not assigned | Step 5 | ? | Open |
 
 ## H0 tasks
 
 | # | Task | Depends on | Unblocks | State |
 |---|---|---|---|---|
-| 1 | FastAPI skeleton + Dockerfile + Runtime + PG + test migration | — | everything | Ready |
-| 2 | Ingestion of 12 CG + Intake (MAAF + Karim CP) → profile, levers, deadlines | 1 | 3, 5 | Blocked by 1 |
-| 3 | Minimal Claims Agent + **review node (8 checks)** | 1 | 4, 5, 6 | Blocked by 1 |
+| 1 | FastAPI skeleton + Dockerfile + Runtime + PG + test migration | — | everything | **Done** |
+| 2 | Ingestion of 12 CG + Intake (MAAF + Karim CP) → profile, levers, deadlines | 1 | 3, 5 | Ready (stream B) |
+| 3 | Minimal Claims Agent + **review node (8 checks)** | 1 | 4, 5, 6 | Ready (stream C) |
 | 4 | Telegram: deep link, media, ask_client, interrupt/resume, deduplication, resume test | 3 | 7 | Blocked by 3 |
 | 5 | `bench/` 3 cases × 3 variants | 2, 3 | slide | Blocked by 2, 3 |
 | 6 | AgentMail + Insurer Simulator (with release) | 3 | 7 | Blocked by 3 |
